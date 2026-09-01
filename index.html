@@ -771,9 +771,69 @@
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
   }
+
+  /* ---------- Loading Screen ---------- */
+  #loader{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    background:var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:0;
+    pointer-events:all;
+    transition:opacity .5s ease, visibility .5s ease;
+  }
+  #loader.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .loader-word{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px, 6vw, 60px);
+    letter-spacing:-0.01em;
+    color:var(--text);
+    opacity:0;
+    transform:translateY(18px);
+    transition:opacity .5s ease, transform .5s ease;
+    position:absolute;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .loader-word.active{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .loader-word.exit{
+    opacity:0;
+    transform:translateY(-18px);
+  }
+  .loader-word .accent{color:var(--cyan);}
+  .loader-bar{
+    position:absolute;
+    bottom:0;
+    left:0;
+    height:2px;
+    background:var(--cyan);
+    box-shadow:0 0 10px var(--cyan);
+    width:0%;
+    transition:width linear;
+  }
 </style>
 </head>
 <body>
+
+  <!-- Loading Screen -->
+  <div id="loader" role="status" aria-label="Loading portfolio">
+    <div class="loader-word" id="lw1">Welcome</div>
+    <div class="loader-word" id="lw2">Sameer&nbsp;<span class="accent">Singh</span></div>
+    <div class="loader-word" id="lw3">Portfolio</div>
+    <div class="loader-bar" id="loaderBar"></div>
+  </div>
 
   <header>
     <nav class="wrap">
@@ -1358,6 +1418,59 @@
   </footer>
 
 <script>
+  // ---------- Loading Screen ----------
+  (function(){
+    const loader  = document.getElementById('loader');
+    const bar     = document.getElementById('loaderBar');
+    const words   = [
+      document.getElementById('lw1'),
+      document.getElementById('lw2'),
+      document.getElementById('lw3')
+    ];
+
+    // Sequence: each word stays visible for `hold` ms, crossfades in `fade` ms
+    const fade = 500;   // css transition duration (ms)
+    const hold = 900;   // how long each word is fully visible (ms)
+    const gap  = 100;   // pause between exit and next entry (ms)
+    const step = fade + hold + gap;  // total time per word
+
+    // Progress bar runs for the full sequence duration
+    const totalDuration = step * words.length + fade; // +fade for final exit
+    bar.style.transition = `width ${totalDuration}ms linear`;
+
+    // Kick off on next paint so the transition is respected
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        bar.style.width = '100%';
+      });
+    });
+
+    function showWord(index){
+      if(index >= words.length){
+        // All words done — hide loader
+        loader.classList.add('hidden');
+        document.body.style.overflow = '';
+        return;
+      }
+      const el = words[index];
+      el.classList.add('active');
+      setTimeout(() => {
+        el.classList.remove('active');
+        el.classList.add('exit');
+        setTimeout(() => {
+          el.classList.remove('exit');
+          showWord(index + 1);
+        }, fade + gap);
+      }, fade + hold);
+    }
+
+    // Lock scroll while loading
+    document.body.style.overflow = 'hidden';
+
+    // Small initial delay so fonts are loaded before animating
+    setTimeout(() => showWord(0), 200);
+  })();
+
   // ---------- Hero network visualization ----------
   (function(){
     const canvas = document.getElementById('netCanvas');
