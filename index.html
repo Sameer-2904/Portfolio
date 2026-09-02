@@ -115,6 +115,56 @@
     animation:blink 1s steps(1) infinite;
     vertical-align:middle;
   }
+  .cert-verify-grid{
+    width:100%;
+    min-width:0;
+  }
+  .cert-verify-card{
+    min-width:0;
+    box-sizing:border-box;
+  }
+  .cert-verify-title,.cert-verify-issuer{
+    overflow-wrap:anywhere;
+  }
+  .cert-verify-grid .extra-cert{
+    display:none;
+  }
+  .cert-verify-grid.show-all .extra-cert{
+    display:flex;
+    animation:certReveal .35s ease both;
+  }
+  @keyframes certReveal{
+    from{opacity:0;transform:translateY(8px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  .cert-view-all-wrap{
+    display:flex;
+    justify-content:center;
+    margin-top:22px;
+  }
+  .cert-view-all-btn{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:12px 18px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--cyan);
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  .cert-view-all-btn:hover,.cert-view-all-btn:focus-visible{
+    border-color:var(--cyan);
+    background:rgba(76,201,240,.08);
+    outline:none;
+  }
+  @media(max-width:819px){
+    .cert-verify-grid{grid-template-columns:1fr;}
+  }
+
   @media (prefers-reduced-motion: reduce){
     .term-status{transition:none;}
   }
@@ -714,6 +764,68 @@
     border-color:var(--cyan);
   }
 
+  /* Featured / Highlighted Builds */
+  .featured-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:24px;
+    margin-top:24px;
+    width:100%;
+  }
+  .featured-card{
+    min-width:0;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .featured-content{min-width:0;}
+  .featured-title,.featured-desc,.featured-tech{
+    overflow-wrap:anywhere;
+    word-break:normal;
+  }
+  .featured-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .featured-actions .btn{
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  @media(max-width:760px){
+    .featured-grid{
+      grid-template-columns:1fr;
+      gap:18px;
+    }
+    .featured-card{
+      min-width:0;
+    }
+    .featured-content{
+      padding:24px;
+    }
+    .featured-title{
+      font-size:clamp(24px,7vw,34px);
+      line-height:1.12;
+    }
+    .featured-desc{
+      font-size:16px;
+      line-height:1.7;
+    }
+    .featured-tech{
+      font-size:12px;
+      line-height:1.7;
+    }
+    .featured-actions .btn{
+      flex:0 1 auto;
+    }
+  }
+  @media(max-width:390px){
+    .featured-content{padding:20px;}
+    .featured-actions .btn{
+      width:100%;
+      justify-content:center;
+    }
+  }
+
   /* Certificate Grid */
   .cert-verify-grid{
     display:grid;
@@ -829,9 +941,9 @@
 
   <!-- Loading Screen -->
   <div id="loader" role="status" aria-label="Loading portfolio">
-    <div class="loader-word" id="lw1">Welcome</div>
+    <div class="loader-word" id="lw1">Welcome!</div>
     <div class="loader-word" id="lw2">Sameer&nbsp;<span class="accent">Singh</span></div>
-    <div class="loader-word" id="lw3">Portfolio</div>
+    <div class="loader-word" id="lw3">Portfolio Website</div>
     <div class="loader-bar" id="loaderBar"></div>
   </div>
 
@@ -907,7 +1019,7 @@
           <div class="section-tag">// 02 — featured</div>
           <h2>Highlighted builds</h2>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:24px;">
+        <div class="featured-grid">
           <div class="featured-card reveal">
             <div class="featured-content">
               <div class="featured-badge">📊 DATA / ANALYTICS</div>
@@ -1117,7 +1229,7 @@
         <!-- Verifiable Certificates -->
         <div style="margin-bottom:48px;">
           <div class="section-tag" style="margin-bottom:20px; color:var(--cyan);">🔒 VERIFIABLE CERTIFICATES</div>
-          <div class="cert-verify-grid reveal">
+          <div class="cert-verify-grid reveal" id="certVerifyGrid">
             <!-- Cisco Networking Academy -->
             <div class="cert-verify-card" onclick="openCertModal('Ethical Hacker', 'Cisco', 'Ethical_Hacker_certificate_2023btechcsbsameer13586-poornima-edu-in_8110d222-d5ae-4f18-97bf-577fdbb5e2ee.pdf')">
               <div class="cert-verify-info">
@@ -1180,21 +1292,21 @@
               <div class="cert-verify-icon">📊</div>
             </div>
             <!-- LinkedIn Learning -->
-            <div class="cert-verify-card" onclick="openCertModal('Career Skills in Data Analytics', 'LinkedIn', 'CertificateOfCompletion_Introduction to Career Skills in Data Analytics.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Career Skills in Data Analytics', 'LinkedIn', 'CertificateOfCompletion_Introduction to Career Skills in Data Analytics.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Career Skills in Data Analytics</div>
                 <div class="cert-verify-issuer">LinkedIn Learning</div>
               </div>
               <div class="cert-verify-icon">💼</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('Microsoft Azure AI', 'LinkedIn', 'CertificateOfCompletion_Microsoft Azure AI Essentials Workloads and Machine Learning on Azure.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Microsoft Azure AI', 'LinkedIn', 'CertificateOfCompletion_Microsoft Azure AI Essentials Workloads and Machine Learning on Azure.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Azure AI Essentials & ML</div>
                 <div class="cert-verify-issuer">LinkedIn Learning</div>
               </div>
               <div class="cert-verify-icon">🤖</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('Business Analysis', 'LinkedIn', 'CertificateOfCompletion_What Is Business Analysis.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Business Analysis', 'LinkedIn', 'CertificateOfCompletion_What Is Business Analysis.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Business Analysis</div>
                 <div class="cert-verify-issuer">LinkedIn Learning</div>
@@ -1202,21 +1314,21 @@
               <div class="cert-verify-icon">📈</div>
             </div>
             <!-- MathWorks -->
-            <div class="cert-verify-card" onclick="openCertModal('MATLAB Onramp', 'MathWorks', 'MATLAB certificate.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('MATLAB Onramp', 'MathWorks', 'MATLAB certificate.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">MATLAB Onramp</div>
                 <div class="cert-verify-issuer">MathWorks</div>
               </div>
               <div class="cert-verify-icon">📐</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('Simulink Onramp', 'MathWorks', 'Simulink certificate.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Simulink Onramp', 'MathWorks', 'Simulink certificate.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Simulink Onramp</div>
                 <div class="cert-verify-issuer">MathWorks</div>
               </div>
               <div class="cert-verify-icon">⚙️</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('Simscape Battery', 'MathWorks', 'Simscape Battery certificate.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Simscape Battery', 'MathWorks', 'Simscape Battery certificate.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Simscape Battery</div>
                 <div class="cert-verify-issuer">MathWorks</div>
@@ -1224,14 +1336,14 @@
               <div class="cert-verify-icon">🔋</div>
             </div>
             <!-- HP LIFE -->
-            <div class="cert-verify-card" onclick="openCertModal('Data Science & Analytics', 'HP LIFE', 'Cyber Security Awareness (HP LIFE)')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Data Science & Analytics', 'HP LIFE', 'Cyber Security Awareness (HP LIFE)')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Data Science & Analytics</div>
                 <div class="cert-verify-issuer">HP LIFE</div>
               </div>
               <div class="cert-verify-icon">📚</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('Cyber Security Awareness', 'HP LIFE', 'Cyber Security Awareness (HP LIFE)')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Cyber Security Awareness', 'HP LIFE', 'Cyber Security Awareness (HP LIFE)')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Cyber Security Awareness</div>
                 <div class="cert-verify-issuer">HP LIFE</div>
@@ -1239,7 +1351,7 @@
               <div class="cert-verify-icon">🛡️</div>
             </div>
             <!-- Wadhwani Foundation -->
-            <div class="cert-verify-card" onclick="openCertModal('Problem Solving & Innovation', 'Wadhwani Foundation', 'Wadhwani')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Problem Solving & Innovation', 'Wadhwani Foundation', 'Wadhwani')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Problem Solving & Innovation</div>
                 <div class="cert-verify-issuer">Wadhwani Foundation</div>
@@ -1247,7 +1359,7 @@
               <div class="cert-verify-icon">💡</div>
             </div>
             <!-- Skill India -->
-            <div class="cert-verify-card" onclick="openCertModal('Supply Chain Management', 'Skill India', 'Skill India')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Supply Chain Management', 'Skill India', 'Skill India')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Supply Chain Management</div>
                 <div class="cert-verify-issuer">Skill India</div>
@@ -1255,28 +1367,28 @@
               <div class="cert-verify-icon">🔗</div>
             </div>
             <!-- Hackathons & Events -->
-            <div class="cert-verify-card" onclick="openCertModal('Cyber Apocalypse CTF 2026', 'Hackathon', 'Cyber Apocalypse.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Cyber Apocalypse CTF 2026', 'Hackathon', 'Cyber Apocalypse.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Cyber Apocalypse CTF 2026</div>
                 <div class="cert-verify-issuer">Cybersecurity Hackathon</div>
               </div>
               <div class="cert-verify-icon">🎯</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('Bharatiya Antariksh Hackathon', 'Hackathon', 'Bhartiya Antariksh Hackathon2026H2S06BAH-P00846.pdf')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Bharatiya Antariksh Hackathon', 'Hackathon', 'Bhartiya Antariksh Hackathon2026H2S06BAH-P00846.pdf')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Bharatiya Antariksh Hackathon</div>
                 <div class="cert-verify-issuer">Space Tech Competition 2026</div>
               </div>
               <div class="cert-verify-icon">🛰️</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('AI for Bharat', 'Hackathon', 'AI for Bharat.png')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('AI for Bharat', 'Hackathon', 'AI for Bharat.png')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">AI for Bharat</div>
                 <div class="cert-verify-issuer">AI Innovation Hackathon</div>
               </div>
               <div class="cert-verify-icon">🤖</div>
             </div>
-            <div class="cert-verify-card" onclick="openCertModal('MindMakers Team', 'Hackathon', 'Sameer singh (Team Name_ MindMakers).png')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('MindMakers Team', 'Hackathon', 'Sameer singh (Team Name_ MindMakers).png')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">MindMakers Team Event</div>
                 <div class="cert-verify-issuer">Hackathon Participation</div>
@@ -1284,13 +1396,16 @@
               <div class="cert-verify-icon">👥</div>
             </div>
             <!-- Specialized Credentials -->
-            <div class="cert-verify-card" onclick="openCertModal('Certified LLM Security', 'Red Team Leaders', 'Certified LLM Security Professional')">
+            <div class="cert-verify-card extra-cert" onclick="openCertModal('Certified LLM Security', 'Red Team Leaders', 'Certified LLM Security Professional')">
               <div class="cert-verify-info">
                 <div class="cert-verify-title">Certified LLM Security Professional</div>
                 <div class="cert-verify-issuer">Red Team Leaders</div>
               </div>
               <div class="cert-verify-icon">🔐</div>
             </div>
+          </div>
+          <div class="cert-view-all-wrap">
+            <button type="button" class="cert-view-all-btn" id="certViewAllBtn" aria-expanded="false" aria-controls="certVerifyGrid">View All Certificates ↓</button>
           </div>
           <p style="color:var(--muted); font-size:12px; margin-top:16px; text-align:center;">Click any certificate to preview and download</p>
         </div>
@@ -1866,6 +1981,18 @@
       </div>
     </div>
   `).join('');
+
+  // ---------- Certificate View All ----------
+  const certViewAllBtn = document.getElementById('certViewAllBtn');
+  const certVerifyGrid = document.getElementById('certVerifyGrid');
+
+  if (certViewAllBtn && certVerifyGrid) {
+    certViewAllBtn.addEventListener('click', () => {
+      const expanded = certVerifyGrid.classList.toggle('show-all');
+      certViewAllBtn.setAttribute('aria-expanded', String(expanded));
+      certViewAllBtn.textContent = expanded ? 'Show Less ↑' : 'View All Certificates ↓';
+    });
+  }
 
   // ---------- Certificate Modal ----------
   function openCertModal(title, issuer, fileName) {
