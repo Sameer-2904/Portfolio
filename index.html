@@ -417,20 +417,560 @@
     color:var(--muted);
   }
 
-  /* ---------- Experience ---------- */
-  .timeline{border-left:1px solid var(--border); margin-left:6px;}
-  .tl-item{position:relative; padding:0 0 36px 28px;}
-  .tl-item:last-child{padding-bottom:0;}
-  .tl-item::before{
-    content:''; position:absolute; left:-5.5px; top:4px;
-    width:10px; height:10px; border-radius:50%;
-    background:var(--bg); border:2px solid var(--cyan);
+  /* ---------- Experience — Horizontal Timeline ---------- */
+
+  /* ============================================================
+     Horizontal Timeline — flex row of fixed-height items
+     Each item is a 3-row grid: [above | dot | below]
+     All items are the same height so dots always align.
+  ============================================================ */
+
+  .htl-outer{
+    position:relative;
+    overflow-x:auto;
+    overflow-y:hidden;
+    cursor:grab;
+    scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%);
+    mask-image:linear-gradient(to right,transparent 0%,#000 5%,#000 95%,transparent 100%);
   }
-  .tl-date{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); margin-bottom:6px;}
-  .tl-item h3{font-size:17px; margin-bottom:2px;}
-  .tl-org{font-size:13px; color:var(--muted); margin-bottom:8px;}
-  .tl-item ul{color:var(--muted); font-size:14px; padding-left:18px;}
-  .tl-item li{margin-bottom:4px;}
+  .htl-outer::-webkit-scrollbar{ display:none; }
+
+  /* flex row — items sit side by side, all stretch to same height */
+  .htl-track{
+    display:flex;
+    flex-direction:row;
+    align-items:stretch;
+    width:max-content;
+    min-height:480px;
+    padding:0 80px;
+    position:relative;
+  }
+
+  /* The axis line is drawn with ::before — absolutely positioned,
+     sits at exactly 50% of the track height (= the dot row centre) */
+  .htl-track::before{
+    content:'';
+    position:absolute;
+    left:0; right:0;
+    top:50%;
+    transform:translateY(-50%);
+    height:2px;
+    background:linear-gradient(to right,
+      transparent 60px,
+      var(--cyan) 120px,
+      var(--cyan) calc(100% - 120px),
+      transparent calc(100% - 60px));
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* Each item — 3-row grid, no fixed height, flex-stretch makes all equal */
+  .htl-item{
+    display:grid;
+    grid-template-rows: 1fr 40px 1fr;
+    width:300px;
+    flex-shrink:0;
+    position:relative;
+    z-index:1;
+    /* reveal start state — handled on children */
+  }
+
+  /* ---- Above slot (row 1) ---- */
+  .htl-above{
+    grid-row:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:center;
+    padding:20px 16px 16px;
+    opacity:0;
+    transform:translateY(-20px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+
+  /* ---- Dot (row 2) ---- */
+  .htl-dot{
+    grid-row:2;
+    align-self:center;
+    justify-self:center;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:var(--bg);
+    border:2px solid var(--border);
+    box-shadow:0 0 0 5px var(--bg);
+    z-index:3;
+    position:relative;
+    opacity:0;
+    transform:scale(0.3);
+    transition:opacity .35s ease, transform .35s ease,
+               border-color .3s, background .3s, box-shadow .3s;
+  }
+
+  /* ---- Below slot (row 3) ---- */
+  .htl-below{
+    grid-row:3;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:center;
+    padding:16px 16px 20px;
+    opacity:0;
+    transform:translateY(20px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+
+  /* ---- Visible states ---- */
+  .htl-item.htl-visible .htl-above,
+  .htl-item.htl-visible .htl-below{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .htl-item.htl-visible .htl-dot{
+    opacity:1;
+    transform:scale(1);
+    border-color:var(--cyan);
+    background:var(--cyan);
+    box-shadow:0 0 0 5px var(--bg), 0 0 14px var(--cyan);
+  }
+
+  /* ---- Stagger per item index ---- */
+  .htl-item:nth-child(1) .htl-above,
+  .htl-item:nth-child(1) .htl-dot,
+  .htl-item:nth-child(1) .htl-below{ transition-delay:0s; }
+  .htl-item:nth-child(2) .htl-above,
+  .htl-item:nth-child(2) .htl-dot,
+  .htl-item:nth-child(2) .htl-below{ transition-delay:.18s; }
+  .htl-item:nth-child(3) .htl-above,
+  .htl-item:nth-child(3) .htl-dot,
+  .htl-item:nth-child(3) .htl-below{ transition-delay:.36s; }
+  .htl-item:nth-child(4) .htl-above,
+  .htl-item:nth-child(4) .htl-dot,
+  .htl-item:nth-child(4) .htl-below{ transition-delay:.54s; }
+  .htl-item:nth-child(5) .htl-above,
+  .htl-item:nth-child(5) .htl-dot,
+  .htl-item:nth-child(5) .htl-below{ transition-delay:.72s; }
+
+  /* ---- Hover effects ---- */
+  .htl-item:hover .htl-dot{
+    box-shadow:0 0 0 5px var(--bg), 0 0 22px var(--cyan);
+  }
+  .htl-below:hover .htl-card{
+    border-color:var(--cyan);
+    box-shadow:0 8px 32px rgba(76,201,240,.15);
+    transform:translateY(-3px);
+  }
+  .htl-above:hover .htl-card{
+    border-color:var(--cyan);
+    box-shadow:0 -8px 32px rgba(76,201,240,.15);
+    transform:translateY(3px);
+  }
+
+  /* ---- Year label ---- */
+  .htl-year{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; color:var(--cyan);
+    letter-spacing:.1em; text-align:center;
+    margin-bottom:8px;
+  }
+  .htl-below .htl-year{
+    margin-bottom:0;
+    margin-top:8px;
+  }
+
+  /* ---- Card ---- */
+  .htl-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px 14px;
+    width:100%;
+    position:relative;
+    transition:border-color .25s, box-shadow .25s, transform .25s;
+  }
+  /* triangle UP — card below line */
+  .htl-below .htl-card::before{
+    content:'';
+    position:absolute;
+    top:-7px; left:50%;
+    transform:translateX(-50%);
+    border:7px solid transparent;
+    border-top:none;
+    border-bottom-color:var(--border);
+  }
+  .htl-below .htl-card::after{
+    content:'';
+    position:absolute;
+    top:-5px; left:50%;
+    transform:translateX(-50%);
+    border:6px solid transparent;
+    border-top:none;
+    border-bottom-color:var(--panel);
+  }
+  /* triangle DOWN — card above line */
+  .htl-above .htl-card::before{
+    content:'';
+    position:absolute;
+    bottom:-7px; left:50%;
+    transform:translateX(-50%);
+    border:7px solid transparent;
+    border-bottom:none;
+    border-top-color:var(--border);
+  }
+  .htl-above .htl-card::after{
+    content:'';
+    position:absolute;
+    bottom:-5px; left:50%;
+    transform:translateX(-50%);
+    border:6px solid transparent;
+    border-bottom:none;
+    border-top-color:var(--panel);
+  }
+
+  /* ---- Card typography ---- */
+  .htl-role{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:14px; font-weight:600;
+    margin-bottom:3px; color:var(--text);
+  }
+  .htl-org{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; color:var(--cyan);
+    letter-spacing:.04em; margin-bottom:7px;
+  }
+  .htl-date{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px; color:var(--muted);
+    margin-bottom:9px;
+  }
+  .htl-card ul{
+    color:var(--muted); font-size:12px;
+    padding-left:14px; margin:0;
+  }
+  .htl-card li{ margin-bottom:4px; line-height:1.5; }
+
+  /* ---- Nav buttons ---- */
+  .htl-nav{
+    display:flex; justify-content:center;
+    gap:12px; margin-top:20px;
+  }
+  .htl-btn{
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:50%; width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--muted); font-size:16px;
+    transition:all .2s; user-select:none;
+  }
+  .htl-btn:hover{
+    border-color:var(--cyan); color:var(--cyan);
+    box-shadow:0 0 12px rgba(76,201,240,.25);
+  }
+
+  /* ---- Progress pips ---- */
+  .htl-dots{
+    display:flex; justify-content:center;
+    gap:8px; margin-top:12px;
+  }
+  .htl-pip{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--border); cursor:pointer; border:none;
+    transition:background .25s, transform .25s;
+  }
+  .htl-pip.active{
+    background:var(--cyan); transform:scale(1.4);
+    box-shadow:0 0 8px var(--cyan);
+  }
+
+  /* ---- Mobile ---- */
+  @media(max-width:700px){
+    .htl-track{ padding:0 24px; min-height:400px; }
+    .htl-item{ width:240px; }
+    .htl-outer{
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch;
+      -webkit-mask-image:none; mask-image:none;
+    }
+    .htl-item{ scroll-snap-align:center; }
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    .htl-above,.htl-dot,.htl-below{
+      opacity:1 !important; transform:none !important; transition:none !important;
+    }
+  }
+
+  /* ---------- Projects Wheel ---------- */
+  .proj-wheel-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:0;
+    padding:32px 0 24px;
+    position:relative;
+    user-select:none;
+  }
+
+  /* The wheel machine container */
+  .pw-machine{
+    position:relative;
+    width:580px;
+    height:580px;
+    display:grid;
+    place-items:center;
+  }
+
+  /* Outer orbit ring */
+  .pw-wheel{
+    position:absolute;
+    inset:0;
+    list-style:none;
+    border-radius:50%;
+    border:1px solid rgba(76,201,240,.2);
+    rotate:var(--pw-rot,0deg);
+    transition:rotate .7s cubic-bezier(.3,1,.35,1);
+  }
+
+  /* Each stop positioned on the orbit */
+  .pw-wheel li{
+    position:absolute;
+    inset:0;
+    display:grid;
+    place-items:center;
+    pointer-events:none;
+    --a:calc((360deg / var(--n)) * var(--i) - 90deg);
+    translate:calc(cos(var(--a)) * 270px) calc(sin(var(--a)) * 270px);
+  }
+
+  /* Stop buttons */
+  .pw-stop{
+    pointer-events:auto;
+    border:1px solid rgba(76,201,240,.3);
+    border-radius:999px;
+    padding:8px 15px;
+    background:rgba(19,27,46,.88);
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.04em;
+    cursor:pointer;
+    white-space:nowrap;
+    rotate:calc(var(--pw-rot,0deg) * -1);
+    transition:rotate .7s cubic-bezier(.3,1,.35,1),
+               background .25s, color .25s, border-color .25s, scale .25s,
+               box-shadow .25s;
+    max-width:130px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
+  }
+  .pw-stop:hover{
+    border-color:var(--cyan);
+    color:var(--text);
+    background:rgba(76,201,240,.1);
+  }
+  .pw-stop:focus-visible{
+    outline:2px solid var(--cyan);
+    outline-offset:3px;
+  }
+  .pw-stop.is-active{
+    background:var(--cyan);
+    border-color:var(--cyan);
+    color:#04121c;
+    scale:1.14;
+    font-weight:700;
+    box-shadow:0 0 22px -4px rgba(76,201,240,.8);
+  }
+
+  /* Pointer triangle at top */
+  .pw-pointer{
+    position:absolute;
+    left:50%;
+    top:calc(50% - 291px);
+    translate:-50% 0;
+    width:0; height:0;
+    border:8px solid transparent;
+    border-top:12px solid var(--cyan);
+    filter:drop-shadow(0 2px 6px rgba(76,201,240,.6));
+    z-index:3;
+  }
+
+  /* Centre face */
+  .pw-face{
+    position:relative;
+    z-index:2;
+    display:grid;
+    justify-items:center;
+    gap:6px;
+    width:260px; height:260px;
+    border-radius:50%;
+    place-content:center;
+    text-align:center;
+    background:radial-gradient(circle at 40% 35%, rgba(19,27,46,1), rgba(11,17,32,1));
+    border:1px solid rgba(76,201,240,.18);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 20px 50px -20px rgba(0,0,0,.8);
+    padding:18px;
+  }
+  .pw-face-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .pw-face-name{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:17px;
+    font-weight:700;
+    color:var(--text);
+    line-height:1.2;
+    margin-top:2px;
+  }
+  .pw-face-domain{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    margin-top:4px;
+    padding:3px 8px;
+    border-radius:999px;
+    border:1px solid rgba(76,201,240,.3);
+    color:var(--cyan);
+    letter-spacing:.06em;
+  }
+
+  /* Prev / Next steer buttons */
+  .pw-steer{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+  }
+  .pw-steer button{
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid rgba(76,201,240,.3);
+    background:rgba(19,27,46,.9);
+    color:var(--text);
+    font-size:14px;
+    cursor:pointer;
+    transition:background .2s, border-color .2s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pw-steer button:hover{
+    background:var(--cyan);
+    border-color:var(--cyan);
+    color:#04121c;
+  }
+  .pw-steer button:focus-visible{
+    outline:2px solid var(--cyan);
+    outline-offset:2px;
+  }
+
+  /* Info panel below the wheel */
+  .pw-info{
+    width:min(600px,100%);
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-top:2px solid var(--cyan);
+    border-radius:var(--radius);
+    padding:24px 28px;
+    margin-top:36px;
+    opacity:0;
+    transform:translateY(10px);
+    transition:opacity .35s ease, transform .35s ease;
+    pointer-events:none;
+  }
+  .pw-info.visible{
+    opacity:1;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+  .pw-info-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .pw-info-title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:17px;
+    font-weight:700;
+    color:var(--text);
+    line-height:1.25;
+  }
+  .pw-info-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    padding:4px 9px;
+    border-radius:4px;
+    white-space:nowrap;
+    flex-shrink:0;
+    background:rgba(76,201,240,.12);
+    color:var(--cyan);
+    border:1px solid rgba(76,201,240,.35);
+  }
+  .pw-info-desc{
+    font-size:13.5px;
+    color:var(--muted);
+    line-height:1.6;
+    margin-bottom:14px;
+  }
+  .pw-info-stack{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .pw-info-links{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .pw-info-link{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:8px 14px;
+    border-radius:6px;
+    border:1px solid var(--border);
+    color:var(--cyan);
+    background:transparent;
+    text-decoration:none;
+    transition:all .2s;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .pw-info-link:hover{
+    background:rgba(76,201,240,.1);
+    border-color:var(--cyan);
+  }
+
+  /* Accessibility live region */
+  .pw-live{
+    position:absolute;
+    width:1px; height:1px;
+    clip-path:inset(50%);
+    overflow:hidden;
+    white-space:nowrap;
+  }
+
+  /* Responsive */
+  @media(max-width:600px){
+    .pw-machine{ width:420px; height:420px; }
+    .pw-wheel li{
+      --a:calc((360deg / var(--n)) * var(--i) - 90deg);
+      translate:calc(cos(var(--a)) * 200px) calc(sin(var(--a)) * 200px);
+    }
+    .pw-face{ width:200px; height:200px; padding:14px; }
+    .pw-face-name{ font-size:13px; }
+    .pw-pointer{ top:calc(50% - 211px); }
+    .pw-stop{ font-size:10px; padding:6px 10px; }
+    .pw-info{ padding:18px 20px; }
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    .pw-wheel, .pw-stop{ transition-duration:.01s !important; }
+    .pw-info{ transition:none !important; }
+  }
 
   /* ---------- Projects ---------- */
   .proj-grid{display:grid; grid-template-columns:1fr; gap:20px;}
@@ -1075,20 +1615,38 @@
           <div class="section-tag">// 03 — projects</div>
           <h2>Selected builds</h2>
         </div>
-        <div class="terminal-wrap" style="margin-bottom:48px;">
-          <div class="wrap">
-            <div class="terminal" role="img" aria-label="Terminal showing system status: security operational, data operational, web operational, github connected">
-              <div class="term-titlebar">
-                <span class="term-dot" style="--c:#FF5F57"></span>
-                <span class="term-dot" style="--c:#FEBC2E"></span>
-                <span class="term-dot" style="--c:#28C840"></span>
-                <span class="term-path">sameer@portfolio:~</span>
+
+        <div class="proj-wheel-wrap reveal">
+          <!-- Wheel machine — items injected by JS based on projects array -->
+          <div class="pw-machine" id="pwMachine" aria-label="Project wheel navigator">
+            <div class="pw-pointer" aria-hidden="true"></div>
+            <nav aria-label="Projects">
+              <!-- --n set by JS -->
+              <ul class="pw-wheel" id="pwWheel"></ul>
+              <div class="pw-face" id="pwFace">
+                <span class="pw-face-label">Selected</span>
+                <span class="pw-face-name" id="pwFaceName">—</span>
+                <span class="pw-face-domain" id="pwFaceDomain"></span>
+                <div class="pw-steer">
+                  <button type="button" id="pwPrev" aria-label="Previous project">←</button>
+                  <button type="button" id="pwNext" aria-label="Next project">→</button>
+                </div>
               </div>
-              <div class="term-body" id="termBody"></div>
+            </nav>
+            <p class="pw-live" id="pwLive" aria-live="polite"></p>
+          </div>
+
+          <!-- Info panel — populated by JS on selection -->
+          <div class="pw-info" id="pwInfo" aria-live="polite" aria-atomic="true">
+            <div class="pw-info-top">
+              <div class="pw-info-title" id="pwInfoTitle"></div>
+              <div class="pw-info-tag" id="pwInfoTag"></div>
             </div>
+            <div class="pw-info-desc" id="pwInfoDesc"></div>
+            <div class="pw-info-stack" id="pwInfoStack"></div>
+            <div class="pw-info-links" id="pwInfoLinks"></div>
           </div>
         </div>
-        <div class="proj-grid reveal" id="projGrid"></div>
       </div>
     </section>
 
@@ -1187,33 +1745,73 @@
           <div class="section-tag">// 06 — experience</div>
           <h2>Where I've worked</h2>
         </div>
-        <div class="timeline reveal">
-          <div class="tl-item">
-            <div class="tl-date">JUL 2026 — AUG 2026</div>
-            <h3>Data Analyst, Program Trainee</h3>
-            <div class="tl-org">Infosys Springboard 7.0</div>
-            <ul>
-              <li>Designed a Smart Mobility Analytics platform in Power BI, integrating Delhi Bus GTFS, Delhi Metro GTFS, traffic, weather, and demographic datasets into one data model.</li>
-              <li>Built 5+ interactive Power BI dashboards turning multimodal transit and demographic data into ridership, traffic and demand insights for stakeholder review.</li>
-            </ul>
-          </div>
-          <div class="tl-item">
-            <div class="tl-date">DEC 2025 — JAN 2026</div>
-            <h3>Cybersecurity Intern</h3>
-            <div class="tl-org">Hack Secure</div>
-            <ul>
-              <li>Completed structured, guided cybersecurity training covering core industry-standard practices in threat awareness and network fundamentals.</li>
-            </ul>
-          </div>
-          <div class="tl-item">
-            <div class="tl-date">JUL 2025</div>
-            <h3>Cybersecurity Intern</h3>
-            <div class="tl-org">AICTE</div>
-            <ul>
-              <li>Gained applied exposure to network security concepts and vulnerability assessment methodology through AICTE-affiliated internship coursework.</li>
-            </ul>
+        <div class="htl-outer" id="htlOuter">
+          <div class="htl-track" id="htlTrack">
+
+            <!-- Item 1 — card BELOW the line -->
+            <div class="htl-item">
+              <div class="htl-above">
+                <div class="htl-year">2026</div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-card">
+                  <div class="htl-role">Data Analyst, Program Trainee</div>
+                  <div class="htl-org">Infosys Springboard 7.0</div>
+                  <div class="htl-date">JUL 2026 — AUG 2026</div>
+                  <ul>
+                    <li>Designed a Smart Mobility Analytics platform in Power BI integrating Delhi Bus GTFS, Metro GTFS, traffic, weather, and demographic datasets.</li>
+                    <li>Built 5+ interactive dashboards turning multimodal transit data into ridership and demand insights for stakeholder review.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item 2 — card ABOVE the line -->
+            <div class="htl-item">
+              <div class="htl-above">
+                <div class="htl-card">
+                  <div class="htl-role">Cybersecurity Intern</div>
+                  <div class="htl-org">Hack Secure</div>
+                  <div class="htl-date">DEC 2025 — JAN 2026</div>
+                  <ul>
+                    <li>Completed structured cybersecurity training covering core industry-standard practices in threat awareness and network fundamentals.</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-year">2025–2026</div>
+              </div>
+            </div>
+
+            <!-- Item 3 — card BELOW the line -->
+            <div class="htl-item">
+              <div class="htl-above">
+                <div class="htl-year">2025</div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-card">
+                  <div class="htl-role">Cybersecurity Intern</div>
+                  <div class="htl-org">AICTE</div>
+                  <div class="htl-date">JUL 2025</div>
+                  <ul>
+                    <li>Gained applied exposure to network security concepts and vulnerability assessment methodology through AICTE-affiliated internship coursework.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
+
+        <!-- Navigation controls -->
+        <div class="htl-nav" aria-label="Timeline navigation">
+          <button class="htl-btn" id="htlPrev" aria-label="Previous">&#8592;</button>
+          <button class="htl-btn" id="htlNext" aria-label="Next">&#8594;</button>
+        </div>
+        <div class="htl-dots" id="htlDots" role="tablist" aria-label="Timeline position"></div>
       </div>
     </section>
 
@@ -1890,97 +2488,159 @@
   cycleRoles();
 
   // ---------- Projects data ----------
-  const projects = [
-    {
-      name:'Smart City Mobility Intelligence Platform',
-      domain:'data',
-      stack:'Power BI · Python · SQL',
-      desc:'Integrates Delhi Bus GTFS, Metro GTFS, traffic, weather and demographic data into a comprehensive mobility analytics dashboard for city-planning insights.',
-      url:'https://github.com/Sameer-2904/Smart-City-Mobility-Intelligence-Platform'
-    },
-    {
-      name:'Dine-Luxe',
-      domain:'dev',
-      stack:'React · Flask · REST API',
-      desc:'Modern food-delivery and restaurant discovery web application with real-time ordering, user authentication, and interactive UI.',
-      url:'https://github.com/Sameer-2904/Dine-Luxe',
-      live:'https://sameer-2904.github.io/Dine-Luxe/'
-    },
-    {
-      name:'Network Intrusion Detection System',
-      domain:'security',
-      stack:'Python · Flask',
-      desc:'Real-time network monitor that detects port scanning, brute-force login attempts and DoS-pattern behavior with persistent alert management.',
-      url:'https://github.com/Sameer-2904/IDS'
-    },
-    {
-      name:'Secure Authentication System with MFA',
-      domain:'security',
-      stack:'Flask · JWT · TOTP',
-      desc:'Production-grade authentication service with TOTP-based multi-factor auth, secure password hashing, and JWT session tokens.',
-      url:'https://github.com/Sameer-2904/Secure-Authentication-System-With-MFA'
-    },
-    {
-      name:'AI Digital Hygiene Threat Detection System',
-      domain:'security',
-      stack:'Python · AI · ML',
-      desc:'AI-assisted safety tool that flags phishing attempts, suspicious URLs, social engineering patterns and credential-theft threats.',
-      url:'https://github.com/Sameer-2904/AI-Digital-Hygiene-Threat-Detection-System'
-    },
-    {
-      name:'Indian Currency Authentication System',
-      domain:'security',
-      stack:'Python · Computer Vision',
-      desc:'Machine learning system for detecting and authenticating Indian currency notes using image processing and classification models.',
-      url:'https://github.com/Sameer-2904/Indian-Currency-Authentication-System'
-    },
-    {
-      name:'Cybersecurity Awareness Chatbot',
-      domain:'security',
-      stack:'Python · NLP · Flask',
-      desc:'Interactive educational chatbot that teaches cybersecurity best practices, threat detection, and security awareness through conversational AI.',
-      url:'https://github.com/Sameer-2904/Cybersecurity-Awareness-Chatbot'
-    },
-    {
-      name:'Network Sniffer',
-      domain:'security',
-      stack:'Python · Scapy',
-      desc:'Packet capture and real-time analysis tool for inspecting live network traffic and protocol behavior.',
-      url:'https://github.com/Sameer-2904/NetworkSniffer'
-    },
-    {
-      name:'Weather × Zomato Data Weaver',
-      domain:'data',
-      stack:'Python · SQL · Pandas',
-      desc:'Data integration project combining weather patterns with food-delivery order behavior to identify seasonal and weather-driven trends.',
-      url:'https://github.com/Sameer-2904/weather-zomato-data-weaver'
-    },
-    {
-      name:'GYM Website',
-      domain:'dev',
-      stack:'HTML · CSS · JavaScript',
-      desc:'Modern, responsive fitness center website with membership details, class schedules, trainer profiles, and member portal.',
-      url:'https://github.com/Sameer-2904/GYM',
-      live:'https://sameer-2904.github.io/GYM/'
-    },
-  ];
-  const domainColor = {security:'var(--cyan)', data:'var(--amber)', dev:'var(--violet)'};
-  const domainLabel = {security:'SECURITY', data:'DATA', dev:'WEB DEV'};
-  const grid = document.getElementById('projGrid');
-  grid.innerHTML = projects.map((p, idx) => `
-    <div class="proj-card" style="--accent:${domainColor[p.domain]}" ${p.coming ? 'style="opacity:0.6"' : ''}>
-      <div class="proj-top">
-        <h3>${p.name}${p.coming ? ' <span style="font-size:11px; opacity:0.7;">(Coming Soon)</span>' : ''}</h3>
-        <span class="proj-tag">${domainLabel[p.domain]}</span>
-      </div>
-      <p>${p.desc}</p>
-      <div class="proj-stack mono">${p.stack}</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        ${p.live ? `<a class="proj-link" href="${p.live}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> Live Demo</a>` : ''}
-        ${!p.coming ? `<a class="proj-link" href="${p.url}" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</a>` : ''}
-      </div>
-    </div>
-  `).join('');
+  // ---------- Projects Wheel ----------
+  (function(){
+    const projects = [
+      { name:'Smart City Mobility Platform', domain:'data',     stack:'Power BI · Python · SQL',        desc:'Integrates Delhi Bus GTFS, Metro GTFS, traffic, weather and demographic data into a comprehensive mobility analytics dashboard for city-planning insights.', url:'https://github.com/Sameer-2904/Smart-City-Mobility-Intelligence-Platform' },
+      { name:'Dine-Luxe',                    domain:'dev',      stack:'React · Flask · REST API',        desc:'Modern restaurant discovery platform with real-time ordering, user authentication, and an intelligent recommendation engine.',                               url:'https://github.com/Sameer-2904/Dine-Luxe', live:'https://sameer-2904.github.io/Dine-Luxe/' },
+      { name:'Network IDS',                  domain:'security', stack:'Python · Flask · Scapy',          desc:'Real-time network monitor that detects port scanning, brute-force and DoS-pattern behavior, with a live Flask alert dashboard.',                           url:'https://github.com/Sameer-2904/IDS' },
+      { name:'Secure Auth + MFA',            domain:'security', stack:'Flask · JWT · TOTP',              desc:'Production-grade authentication service with TOTP-based multi-factor auth, bcrypt password hashing and JWT session tokens.',                              url:'https://github.com/Sameer-2904/Secure-Authentication-System-With-MFA' },
+      { name:'AI Hygiene Detector',          domain:'security', stack:'Python · AI · ML',                desc:'AI-assisted safety tool that flags phishing attempts, suspicious URLs, social-engineering patterns and credential-theft threats.',                         url:'https://github.com/Sameer-2904/AI-Digital-Hygiene-Threat-Detection-System' },
+      { name:'Currency Auth System',         domain:'security', stack:'Python · Computer Vision',        desc:'ML system for detecting and authenticating Indian currency notes using image processing and classification models.',                                       url:'https://github.com/Sameer-2904/Indian-Currency-Authentication-System' },
+      { name:'CyberSec Chatbot',             domain:'security', stack:'Python · NLP · Flask',            desc:'Educational chatbot that teaches cybersecurity best practices, threat detection and security awareness through conversational AI.',                        url:'https://github.com/Sameer-2904/Cybersecurity-Awareness-Chatbot' },
+      { name:'Network Sniffer',              domain:'security', stack:'Python · Scapy',                  desc:'Packet capture and real-time analysis tool for inspecting live network traffic and protocol behaviour.',                                                  url:'https://github.com/Sameer-2904/NetworkSniffer' },
+      { name:'Weather × Zomato Weaver',      domain:'data',     stack:'Python · SQL · Pandas',           desc:'Data integration project combining weather patterns with food-delivery order behaviour to surface seasonal and weather-driven trends.',                     url:'https://github.com/Sameer-2904/weather-zomato-data-weaver' },
+      { name:'GYM Website',                  domain:'dev',      stack:'HTML · CSS · JavaScript',         desc:'Modern responsive fitness-centre website with membership details, class schedules, trainer profiles and a member portal.',                                 url:'https://github.com/Sameer-2904/GYM', live:'https://sameer-2904.github.io/GYM/' },
+    ];
+
+    const domainColor = { security:'var(--cyan)', data:'var(--amber)', dev:'var(--violet)' };
+    const domainLabel = { security:'SECURITY',    data:'DATA',         dev:'WEB DEV'       };
+
+    const wheel    = document.getElementById('pwWheel');
+    const faceName = document.getElementById('pwFaceName');
+    const faceDom  = document.getElementById('pwFaceDomain');
+    const liveEl   = document.getElementById('pwLive');
+    const infoBox  = document.getElementById('pwInfo');
+    const infoTitle= document.getElementById('pwInfoTitle');
+    const infoTag  = document.getElementById('pwInfoTag');
+    const infoDesc = document.getElementById('pwInfoDesc');
+    const infoStack= document.getElementById('pwInfoStack');
+    const infoLinks= document.getElementById('pwInfoLinks');
+    if(!wheel) return;
+
+    const n    = projects.length;
+    const step = 360 / n;
+    let rot    = 0;
+    let active = 0;
+    let idleTimer   = null;
+    let idleInterval= null;
+    const IDLE_DELAY = 3000;   // ms before auto-rotate starts
+    const IDLE_STEP  = 2800;   // ms per step when idle
+
+    // Build wheel items
+    wheel.style.setProperty('--n', n);
+    projects.forEach((p, i) => {
+      const li  = document.createElement('li');
+      li.style.cssText = `--i:${i}`;
+      const btn = document.createElement('button');
+      btn.type  = 'button';
+      btn.className = 'pw-stop' + (i === 0 ? ' is-active' : '');
+      btn.setAttribute('aria-pressed', String(i === 0));
+      btn.textContent = p.name;
+      btn.addEventListener('click', () => { stopIdle(); goTo(i); scheduleIdle(); });
+      li.appendChild(btn);
+      wheel.appendChild(li);
+    });
+
+    const stops = Array.from(wheel.querySelectorAll('.pw-stop'));
+
+    // Counter-rotate stops so labels stay upright
+    const syncStopRotation = () =>
+      stops.forEach(s => s.style.rotate = (-rot) + 'deg');
+
+    // Navigate to a specific index
+    const goTo = (idx) => {
+      idx = ((idx % n) + n) % n;
+      // Find shortest arc
+      const target = -idx * step;
+      let delta = target - (((rot % 360) + 360) % 360 === 0 ? 0 : rot % 360);
+      delta = ((delta % 360) + 540) % 360 - 180;
+      rot += delta;
+      wheel.style.setProperty('--pw-rot', rot + 'deg');
+      syncStopRotation();
+
+      stops.forEach((s, k) => {
+        s.classList.toggle('is-active', k === idx);
+        s.setAttribute('aria-pressed', String(k === idx));
+      });
+      active = idx;
+
+      const p = projects[idx];
+      const col = domainColor[p.domain];
+      const lbl = domainLabel[p.domain];
+
+      // Update centre face
+      faceName.textContent = p.name;
+      faceDom.textContent  = lbl;
+      faceDom.style.color  = col;
+      faceDom.style.borderColor = col;
+
+      // Accessibility live region
+      liveEl.textContent = p.name + ' selected';
+
+      // Update info panel
+      infoTitle.textContent = p.name;
+      infoTag.textContent   = lbl;
+      infoTag.style.cssText = `background:color-mix(in srgb,${col} 12%,transparent);color:${col};border-color:color-mix(in srgb,${col} 40%,transparent)`;
+      infoBox.style.borderTopColor = col;
+      infoDesc.textContent  = p.desc;
+      infoStack.textContent = '// ' + p.stack;
+
+      infoLinks.innerHTML = '';
+      if(p.live){
+        const a = document.createElement('a');
+        a.href = p.live; a.target = '_blank'; a.rel = 'noopener';
+        a.className = 'pw-info-link';
+        a.innerHTML = '↗ Live Demo';
+        infoLinks.appendChild(a);
+      }
+      const gh = document.createElement('a');
+      gh.href = p.url; gh.target = '_blank'; gh.rel = 'noopener';
+      gh.className = 'pw-info-link';
+      gh.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub';
+      infoLinks.appendChild(gh);
+
+      // Reveal info panel
+      infoBox.classList.add('visible');
+    };
+
+    // Idle auto-rotation
+    const startIdle = () => {
+      idleInterval = setInterval(() => goTo(active + 1), IDLE_STEP);
+    };
+    const stopIdle = () => {
+      clearTimeout(idleTimer);
+      clearInterval(idleInterval);
+      idleInterval = null;
+    };
+    const scheduleIdle = () => {
+      stopIdle();
+      idleTimer = setTimeout(startIdle, IDLE_DELAY);
+    };
+
+    // Pause idle on hover / focus inside the wheel
+    const machine = document.getElementById('pwMachine');
+    machine.addEventListener('mouseenter', stopIdle);
+    machine.addEventListener('focusin',    stopIdle);
+    machine.addEventListener('mouseleave', scheduleIdle);
+    machine.addEventListener('focusout',   e => {
+      if(!machine.contains(e.relatedTarget)) scheduleIdle();
+    });
+
+    // Prev / Next buttons
+    document.getElementById('pwPrev').addEventListener('click', () => { stopIdle(); goTo(active - 1); scheduleIdle(); });
+    document.getElementById('pwNext').addEventListener('click', () => { stopIdle(); goTo(active + 1); scheduleIdle(); });
+
+    // Keyboard arrow support on wheel
+    wheel.addEventListener('keydown', e => {
+      if(e.key === 'ArrowRight' || e.key === 'ArrowDown')  { stopIdle(); goTo(active + 1); scheduleIdle(); }
+      if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    { stopIdle(); goTo(active - 1); scheduleIdle(); }
+    });
+
+    // Init — show first project and start idle
+    goTo(0);
+    scheduleIdle();
+  })();
 
   // ---------- Certificate View All ----------
   const certViewAllBtn = document.getElementById('certViewAllBtn');
@@ -2049,6 +2709,95 @@
     });
   }, {threshold:0.12});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // ---------- Horizontal Timeline ----------
+  (function(){
+    const outer  = document.getElementById('htlOuter');
+    const track  = document.getElementById('htlTrack');
+    const dotsEl = document.getElementById('htlDots');
+    const btnPrev= document.getElementById('htlPrev');
+    const btnNext= document.getElementById('htlNext');
+    if(!outer || !track) return;
+
+    const items = Array.from(track.querySelectorAll('.htl-item'));
+    const count = items.length;
+
+    // Build progress pips
+    items.forEach((_, i) => {
+      const pip = document.createElement('button');
+      pip.className = 'htl-pip';
+      pip.setAttribute('role', 'tab');
+      pip.setAttribute('aria-label', 'Jump to item ' + (i + 1));
+      pip.addEventListener('click', () => scrollToItem(i));
+      dotsEl.appendChild(pip);
+    });
+    const pips = Array.from(dotsEl.querySelectorAll('.htl-pip'));
+
+    // Scroll to centre a specific item
+    function scrollToItem(idx){
+      const item = items[idx];
+      if(!item) return;
+      const target = item.offsetLeft - (outer.offsetWidth - item.offsetWidth) / 2;
+      outer.scrollTo({ left: target, behavior: 'smooth' });
+    }
+
+    // Update active pip
+    function updatePips(){
+      const viewCentre = outer.scrollLeft + outer.offsetWidth / 2;
+      let closest = 0, minDist = Infinity;
+      items.forEach((it, i) => {
+        const dist = Math.abs((it.offsetLeft + it.offsetWidth / 2) - viewCentre);
+        if(dist < minDist){ minDist = dist; closest = i; }
+      });
+      pips.forEach((p, i) => p.classList.toggle('active', i === closest));
+    }
+
+    outer.addEventListener('scroll', updatePips, { passive: true });
+    updatePips();
+
+    // Arrow buttons
+    btnPrev.addEventListener('click', () => {
+      const cur = pips.findIndex(p => p.classList.contains('active'));
+      scrollToItem(Math.max(0, cur - 1));
+    });
+    btnNext.addEventListener('click', () => {
+      const cur = pips.findIndex(p => p.classList.contains('active'));
+      scrollToItem(Math.min(count - 1, cur + 1));
+    });
+
+    // Scroll-reveal — stagger items as section enters viewport
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sectionObs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(!entry.isIntersecting) return;
+        if(reduced){
+          items.forEach(it => it.classList.add('htl-visible'));
+        } else {
+          items.forEach((it, idx) => {
+            setTimeout(() => it.classList.add('htl-visible'), idx * 200);
+          });
+        }
+        sectionObs.unobserve(entry.target);
+      });
+    }, { threshold: 0.25 });
+    sectionObs.observe(outer);
+
+    // Drag-to-scroll on desktop
+    let isDown = false, startX = 0, scrollStart = 0;
+    outer.addEventListener('mousedown', e => {
+      isDown = true; outer.style.cursor = 'grabbing';
+      startX = e.pageX - outer.offsetLeft;
+      scrollStart = outer.scrollLeft;
+    });
+    outer.addEventListener('mouseleave', () => { isDown = false; outer.style.cursor = ''; });
+    outer.addEventListener('mouseup',    () => { isDown = false; outer.style.cursor = ''; });
+    outer.addEventListener('mousemove',  e => {
+      if(!isDown) return;
+      e.preventDefault();
+      outer.scrollLeft = scrollStart - (e.pageX - outer.offsetLeft - startX);
+    });
+  })();
+
 </script>
 </body>
 </html>
