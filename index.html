@@ -232,6 +232,53 @@
   }
   @media(min-width:760px){.nav-cta{display:inline-block;}}
 
+  /* ---------- Mobile nav toggle ---------- */
+  .nav-toggle{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:5px;
+    width:38px; height:38px;
+    background:transparent;
+    border:1px solid var(--border);
+    border-radius:6px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .nav-toggle span{
+    display:block;
+    width:18px; height:2px;
+    background:var(--text);
+    border-radius:2px;
+    transition:transform .25s ease, opacity .25s ease;
+  }
+  .nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+  .nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0;}
+  .nav-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+  @media(min-width:760px){.nav-toggle{display:none;}}
+
+  .mobile-menu{
+    display:none;
+    flex-direction:column;
+    max-height:0;
+    overflow:hidden;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    transition:max-height .3s ease;
+  }
+  .mobile-menu.open{max-height:520px;}
+  @media(min-width:760px){.mobile-menu{display:none !important;}}
+  @media(max-width:759px){.mobile-menu{display:flex;}}
+  .mobile-menu a{
+    padding:14px 24px;
+    font-size:15px;
+    color:var(--text);
+    border-bottom:1px solid var(--border);
+  }
+  .mobile-menu a:last-child{border-bottom:none;}
+  .mobile-menu a:active,.mobile-menu a:focus-visible{color:var(--cyan); background:rgba(76,201,240,.06);}
+
   /* ---------- Hero ---------- */
   .hero{
     padding:100px 0 80px;
@@ -712,9 +759,14 @@
 
   /* The wheel machine container */
   .pw-machine{
+    --pw-size:580px;
+    --pw-radius:270px;
+    --pw-face:260px;
+    --pw-pointer-offset:291px;
     position:relative;
-    width:580px;
-    height:580px;
+    width:var(--pw-size);
+    height:var(--pw-size);
+    max-width:100%;
     display:grid;
     place-items:center;
   }
@@ -738,7 +790,7 @@
     place-items:center;
     pointer-events:none;
     --a:calc((360deg / var(--n)) * var(--i) - 90deg);
-    translate:calc(cos(var(--a)) * 270px) calc(sin(var(--a)) * 270px);
+    translate:calc(cos(var(--a)) * var(--pw-radius)) calc(sin(var(--a)) * var(--pw-radius));
   }
 
   /* Stop buttons */
@@ -786,7 +838,7 @@
   .pw-pointer{
     position:absolute;
     left:50%;
-    top:calc(50% - 291px);
+    top:calc(50% - var(--pw-pointer-offset));
     translate:-50% 0;
     width:0; height:0;
     border:8px solid transparent;
@@ -802,7 +854,7 @@
     display:grid;
     justify-items:center;
     gap:6px;
-    width:260px; height:260px;
+    width:var(--pw-face); height:var(--pw-face);
     border-radius:50%;
     place-content:center;
     text-align:center;
@@ -955,16 +1007,55 @@
 
   /* Responsive */
   @media(max-width:600px){
-    .pw-machine{ width:420px; height:420px; }
-    .pw-wheel li{
-      --a:calc((360deg / var(--n)) * var(--i) - 90deg);
-      translate:calc(cos(var(--a)) * 200px) calc(sin(var(--a)) * 200px);
-    }
-    .pw-face{ width:200px; height:200px; padding:14px; }
+    .pw-machine{ --pw-size:420px; --pw-radius:200px; --pw-face:200px; --pw-pointer-offset:211px; }
+    .pw-face{ padding:14px; }
     .pw-face-name{ font-size:13px; }
-    .pw-pointer{ top:calc(50% - 211px); }
     .pw-stop{ font-size:10px; padding:6px 10px; }
     .pw-info{ padding:18px 20px; }
+  }
+
+  /* Below ~450px, a circular wheel with 10 stops no longer fits —
+     drop the circle layout and show the same buttons as a simple
+     wrapped chip list instead, reusing all existing JS/click logic. */
+  @media(max-width:480px){
+    .pw-machine{
+      position:static;
+      width:100%; height:auto;
+      display:block;
+    }
+    .pw-pointer{ display:none; }
+    .pw-wheel{
+      position:static;
+      inset:auto;
+      border:none;
+      rotate:0deg !important;
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:8px;
+      padding:0;
+      margin-bottom:18px;
+    }
+    .pw-wheel li{
+      position:static;
+      inset:auto;
+      display:inline-flex;
+      translate:none !important;
+    }
+    .pw-stop{
+      rotate:0deg !important;
+      max-width:none;
+    }
+    .pw-face{
+      position:static;
+      width:100%; height:auto;
+      border-radius:var(--radius);
+      padding:22px 18px;
+      background:var(--panel);
+      border:1px solid rgba(76,201,240,.18);
+      box-shadow:none;
+    }
+    .pw-face-name{ font-size:16px; }
   }
 
   @media(prefers-reduced-motion:reduce){
@@ -1501,7 +1592,19 @@
         </div>
         <a class="nav-cta" href="#contact">Let's Talk ↗</a>
       </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu" type="button">
+        <span></span><span></span><span></span>
+      </button>
     </nav>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#projects">Work</a>
+      <a href="#about">About</a>
+      <a href="#skills">Skills</a>
+      <a href="#experience">Experience</a>
+      <a href="#certifications">Certifications</a>
+      <a href="#contact">Contact</a>
+      <a class="btn btn-primary" href="#contact" style="margin-top:8px; justify-content:center;">Let's Talk ↗</a>
+    </div>
   </header>
 
   <main>
@@ -2712,6 +2815,36 @@
   document.getElementById('certModal').addEventListener('click', (e) => {
     if (e.target.id === 'certModal') closeCertModal();
   });
+
+  // ---------- Mobile nav toggle ----------
+  (function(){
+    const toggle = document.getElementById('navToggle');
+    const menu   = document.getElementById('mobileMenu');
+    if(!toggle || !menu) return;
+
+    const closeMenu = () => {
+      menu.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+    const openMenu = () => {
+      menu.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+    };
+
+    toggle.addEventListener('click', () => {
+      const isOpen = menu.classList.contains('open');
+      isOpen ? closeMenu() : openMenu();
+    });
+
+    // Close when a menu link is tapped
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+
+    // Close on Escape
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMenu(); });
+
+    // Close if viewport grows back to desktop size
+    window.addEventListener('resize', () => { if(window.innerWidth >= 760) closeMenu(); });
+  })();
 
   // ---------- Reveal on scroll ----------
   const io = new IntersectionObserver((entries)=>{
