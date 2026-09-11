@@ -407,6 +407,16 @@
   .section-head h2{font-size:clamp(26px,4vw,36px);}
   .reveal{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease;}
   .reveal.in{opacity:1; transform:none;}
+  .reveal.in .section-tag{ animation:tagGlitch .5s steps(3,end); }
+  @keyframes tagGlitch{
+    0%  { opacity:0; transform:translateX(-6px); text-shadow:2px 0 var(--cyan), -2px 0 var(--violet); }
+    35% { opacity:1; transform:translateX(3px);  text-shadow:-2px 0 var(--cyan), 2px 0 var(--violet); }
+    60% { transform:translateX(-1px); text-shadow:1px 0 var(--cyan), -1px 0 var(--violet); }
+    100%{ transform:translateX(0); text-shadow:none; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .reveal.in .section-tag{ animation:none; }
+  }
 
   /* ---------- About ---------- */
   .about-grid{display:grid; grid-template-columns:1fr; gap:32px;}
@@ -1524,6 +1534,32 @@
     *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
   }
 
+  /* ---------- Sitewide cyber background + scroll HUD ---------- */
+  #bgFX{
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .6s ease;
+  }
+  #bgFX.active{
+    opacity:.32;
+  }
+  #scrollProgress{
+    position:fixed;
+    top:0; left:0;
+    height:2px; width:0%;
+    background:linear-gradient(90deg, var(--cyan), var(--violet));
+    box-shadow:0 0 8px rgba(76,201,240,.7);
+    z-index:60;
+    pointer-events:none;
+    transition:width .08s linear;
+  }
+  @media (prefers-reduced-motion: reduce){
+    #bgFX.active{ opacity:.25; }
+  }
+
   /* ---------- Loading Screen ---------- */
   #loader{
     position:fixed;
@@ -1534,7 +1570,7 @@
     align-items:center;
     justify-content:center;
     flex-direction:column;
-    gap:0;
+    gap:18px;
     pointer-events:all;
     transition:opacity .5s ease, visibility .5s ease;
   }
@@ -1543,48 +1579,117 @@
     visibility:hidden;
     pointer-events:none;
   }
+  .loader-grid{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(76,201,240,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(76,201,240,0.06) 1px, transparent 1px);
+    background-size:34px 34px;
+    -webkit-mask-image:radial-gradient(circle at 50% 42%, black, transparent 72%);
+            mask-image:radial-gradient(circle at 50% 42%, black, transparent 72%);
+    pointer-events:none;
+  }
+  .loader-words{
+    position:relative;
+    width:min(520px, 92vw);
+    height:clamp(52px, 9vw, 68px);
+    display:flex; align-items:center; justify-content:center;
+  }
   .loader-word{
     font-family:'Space Grotesk',sans-serif;
     font-weight:700;
-    font-size:clamp(28px, 6vw, 60px);
+    font-size:clamp(26px, 5.6vw, 44px);
     letter-spacing:-0.01em;
     color:var(--text);
     opacity:0;
-    transform:translateY(18px);
+    transform:translateY(14px);
     transition:opacity .5s ease, transform .5s ease;
     position:absolute;
     text-align:center;
     white-space:nowrap;
   }
-  .loader-word.active{
-    opacity:1;
-    transform:translateY(0);
+  .loader-word.active{ opacity:1; transform:translateY(0); }
+  .loader-word.exit{ opacity:0; transform:translateY(-14px); }
+  .loader-word .accent{ color:var(--cyan); }
+  .loader-term{
+    position:relative;
+    width:min(440px, 88vw);
+    background:#0D1526;
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 24px 60px -28px rgba(0,0,0,0.8), 0 0 0 1px rgba(76,201,240,.06);
   }
-  .loader-word.exit{
-    opacity:0;
-    transform:translateY(-18px);
+  .loader-term-body{ min-height:170px; }
+  .loader-line{
+    display:flex; flex-wrap:wrap; align-items:baseline;
+    min-height:20px; margin-bottom:3px; font-size:12px;
   }
-  .loader-word .accent{color:var(--cyan);}
+  .loader-line .prompt{ color:var(--cyan); margin-right:6px; flex-shrink:0; }
+  .loader-line .txt{ color:var(--text); }
+  .loader-line.typing .txt::after{
+    content:'';
+    display:inline-block;
+    width:6px; height:12px;
+    margin-left:3px;
+    background:var(--cyan);
+    animation:loaderBlink .9s steps(1) infinite;
+    vertical-align:-2px;
+  }
+  .loader-line .status-ok{ color:#4ADE80; margin-left:8px; font-weight:600; }
+  @keyframes loaderBlink{ 50%{opacity:0;} }
+  .loader-status{
+    position:relative;
+    display:flex; align-items:center; gap:12px;
+    width:min(440px, 88vw);
+  }
+  .loader-pct{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; color:var(--cyan);
+    min-width:36px;
+  }
+  .loader-bar-track{
+    flex:1; height:3px;
+    background:rgba(255,255,255,.06);
+    border-radius:2px;
+    overflow:hidden;
+  }
   .loader-bar{
-    position:absolute;
-    bottom:0;
-    left:0;
-    height:2px;
+    height:100%; width:0%;
     background:var(--cyan);
     box-shadow:0 0 10px var(--cyan);
-    width:0%;
-    transition:width linear;
+    transition:width .12s linear;
   }
 </style>
 </head>
 <body>
 
+  <!-- Sitewide cyber background effect -->
+  <canvas id="bgFX" aria-hidden="true"></canvas>
+  <!-- Scroll progress HUD bar -->
+  <div id="scrollProgress" aria-hidden="true"></div>
+
   <!-- Loading Screen -->
   <div id="loader" role="status" aria-label="Loading portfolio">
-    <div class="loader-word" id="lw1">Welcome!</div>
-    <div class="loader-word" id="lw2">I'm Sameer&nbsp;<span class="accent">Singh</span></div>
-    <div class="loader-word" id="lw3">My Portfolio Website</div>
-    <div class="loader-bar" id="loaderBar"></div>
+    <div class="loader-grid" aria-hidden="true"></div>
+    <div class="loader-words" aria-hidden="true">
+      <div class="loader-word" id="lw1">Welcome!</div>
+      <div class="loader-word" id="lw2">I'm Sameer&nbsp;<span class="accent">Singh</span></div>
+      <div class="loader-word" id="lw3">My Portfolio Website</div>
+    </div>
+    <div class="loader-term">
+      <div class="term-titlebar">
+        <span class="term-dot" style="--c:#FF5F57"></span>
+        <span class="term-dot" style="--c:#FEBC2E"></span>
+        <span class="term-dot" style="--c:#28C840"></span>
+        <span class="term-path">root@sameer-singh:~$</span>
+      </div>
+      <div class="term-body loader-term-body" id="loaderBody"></div>
+    </div>
+    <div class="loader-status">
+      <span class="loader-pct" id="loaderPct">00%</span>
+      <div class="loader-bar-track"><div class="loader-bar" id="loaderBar"></div></div>
+    </div>
   </div>
 
   <header>
@@ -2253,57 +2358,114 @@
   </footer>
 
 <script>
-  // ---------- Loading Screen ----------
+  // ---------- Loading Screen: cybersecurity boot sequence ----------
   (function(){
     const loader  = document.getElementById('loader');
+    const body    = document.getElementById('loaderBody');
     const bar     = document.getElementById('loaderBar');
+    const pctEl   = document.getElementById('loaderPct');
     const words   = [
       document.getElementById('lw1'),
       document.getElementById('lw2'),
       document.getElementById('lw3')
     ];
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Sequence: each word stays visible for `hold` ms, crossfades in `fade` ms
-    const fade = 500;   // css transition duration (ms)
-    const hold = 900;   // how long each word is fully visible (ms)
-    const gap  = 100;   // pause between exit and next entry (ms)
-    const step = fade + hold + gap;  // total time per word
+    const lines = [
+      { text:'booting secure_environment' },
+      { text:'connecting to sameer.dev',              status:'OK' },
+      { text:'authenticating user: SAMEER SINGH',      status:'VERIFIED' },
+      { text:'access_level: ADMIN',                    status:'GRANTED' },
+      { text:'decrypting portfolio.exe',                status:'DONE' },
+      { text:'welcome, have a look around.' },
+    ];
 
-    // Progress bar runs for the full sequence duration
-    const totalDuration = step * words.length + fade; // +fade for final exit
-    bar.style.transition = `width ${totalDuration}ms linear`;
-
-    // Kick off on next paint so the transition is respected
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        bar.style.width = '100%';
-      });
-    });
-
-    function showWord(index){
-      if(index >= words.length){
-        // All words done — hide loader
-        loader.classList.add('hidden');
-        document.body.style.overflow = '';
-        return;
-      }
-      const el = words[index];
-      el.classList.add('active');
-      setTimeout(() => {
-        el.classList.remove('active');
-        el.classList.add('exit');
-        setTimeout(() => {
-          el.classList.remove('exit');
-          showWord(index + 1);
-        }, fade + gap);
-      }, fade + hold);
+    function finish(){
+      loader.classList.add('hidden');
+      document.body.style.overflow = '';
     }
 
     // Lock scroll while loading
     document.body.style.overflow = 'hidden';
 
-    // Small initial delay so fonts are loaded before animating
-    setTimeout(() => showWord(0), 200);
+    if(reducedMotion){
+      words[2].classList.add('active'); // just settle on the final line, no crossfade
+      body.innerHTML = lines.map(l => `
+        <div class="loader-line">
+          <span class="prompt">&gt;</span><span class="txt">${l.text}</span>
+          ${l.status ? `<span class="status-ok">[${l.status}]</span>` : ''}
+        </div>`).join('');
+      bar.style.width = '100%';
+      pctEl.textContent = '100%';
+      setTimeout(finish, 500);
+      return;
+    }
+
+    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    // ----- Crossfading "Welcome! / I'm Sameer Singh / My Portfolio Website" -----
+    function runWords(){
+      return new Promise(resolve => {
+        const fadeMs = 500, holdMs = 850, gapMs = 90;
+        function showWord(i){
+          if(i >= words.length){ resolve(); return; }
+          const el = words[i];
+          el.classList.add('active');
+          setTimeout(() => {
+            el.classList.remove('active');
+            el.classList.add('exit');
+            setTimeout(() => {
+              el.classList.remove('exit');
+              showWord(i + 1);
+            }, fadeMs + gapMs);
+          }, fadeMs + holdMs);
+        }
+        showWord(0);
+      });
+    }
+
+    // ----- Terminal boot typing sequence -----
+    const totalChars = lines.reduce((sum, l) => sum + l.text.length, 0);
+    let typedChars = 0;
+
+    async function typeLine(line){
+      const row = document.createElement('div');
+      row.className = 'loader-line typing';
+      row.innerHTML = '<span class="prompt">&gt;</span><span class="txt"></span>';
+      body.appendChild(row);
+      const txtEl = row.querySelector('.txt');
+
+      for(let i = 0; i < line.text.length; i++){
+        txtEl.textContent += line.text[i];
+        typedChars++;
+        const pct = Math.min(100, Math.round((typedChars / totalChars) * 100));
+        bar.style.width = pct + '%';
+        pctEl.textContent = String(pct).padStart(2,'0') + '%';
+        await sleep(14 + Math.random()*16);
+      }
+      row.classList.remove('typing');
+      if(line.status){
+        const statusSpan = document.createElement('span');
+        statusSpan.className = 'status-ok';
+        statusSpan.textContent = `[${line.status}]`;
+        row.appendChild(statusSpan);
+      }
+      await sleep(160);
+    }
+
+    async function runTerminal(){
+      await sleep(250); // let fonts settle
+      for(const line of lines){
+        await typeLine(line);
+      }
+      await sleep(300);
+    }
+
+    // Run both sequences in parallel; hide only once both are done.
+    Promise.all([runWords(), runTerminal()]).then(async () => {
+      await sleep(350);
+      finish();
+    });
   })();
 
   // ---------- Hero network visualization ----------
@@ -3030,6 +3192,107 @@
       e.preventDefault();
       outer.scrollLeft = scrollStart - (e.pageX - outer.offsetLeft - startX);
     });
+  })();
+
+  // ---------- Sitewide cyber background: falling code rain ----------
+  (function(){
+    const canvas = document.getElementById('bgFX');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const chars = '01アイウエオカキクケコサシスセソ0101{}<>/#$*';
+    const fontSize = 16;
+    const colPitch = fontSize * 1.4; // column spacing — denser than before, still airy
+    // Trail color mostly cyan (site accent) with occasional amber/violet flecks
+    const palette = ['76,201,240','76,201,240','76,201,240','242,166,90','157,123,255'];
+    let W = 0, H = 0, DPR = 1, drops = [], colColor = [];
+
+    function resize(){
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width  = W * DPR;
+      canvas.height = H * DPR;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      const cols = Math.ceil(W / colPitch);
+      drops = new Array(cols).fill(0).map(() => Math.random() * -60);
+      colColor = new Array(cols).fill(0).map(() => palette[Math.floor(Math.random()*palette.length)]);
+      ctx.fillStyle = '#0B1120';
+      ctx.fillRect(0, 0, W, H);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function draw(){
+      ctx.fillStyle = 'rgba(11,17,32,0.11)'; // translucent fade -> trailing streak
+      ctx.fillRect(0, 0, W, H);
+      ctx.font = fontSize + 'px "JetBrains Mono", monospace';
+      for(let i = 0; i < drops.length; i++){
+        const ch = chars[Math.floor(Math.random() * chars.length)];
+        const x = i * colPitch;
+        const y = drops[i] * fontSize;
+
+        // Occasional bright "head" flash for a more authentic glowing look
+        if(Math.random() > 0.965){
+          ctx.fillStyle = 'rgba(210,244,255,0.9)';
+        } else {
+          ctx.fillStyle = `rgba(${colColor[i]},0.55)`;
+        }
+        ctx.fillText(ch, x, y);
+
+        if(y > H && Math.random() > 0.97){
+          drops[i] = 0;
+          colColor[i] = palette[Math.floor(Math.random()*palette.length)];
+        }
+        drops[i] += 0.45;
+      }
+    }
+
+    let raf = null;
+    function loop(){ draw(); raf = requestAnimationFrame(loop); }
+
+    if(reducedMotion){
+      // Draw a single faint static frame; no continuous animation.
+      draw();
+    } else {
+      document.addEventListener('visibilitychange', () => {
+        if(document.hidden){ if(raf) cancelAnimationFrame(raf); raf = null; }
+        else if(!raf){ loop(); }
+      });
+      loop();
+    }
+
+    // Only reveal the rain once the person scrolls down to the About
+    // section — keeps the hero's own node-network visual clean and
+    // uncluttered, and lets the rain "kick in" as an intentional beat
+    // once they start scrolling through the rest of the site.
+    const aboutSection = document.getElementById('about');
+    if(aboutSection){
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          canvas.classList.toggle('active', entry.isIntersecting || entry.boundingClientRect.top < 0);
+        });
+      }, { rootMargin: '0px 0px -40% 0px', threshold: 0 });
+      io.observe(aboutSection);
+    } else {
+      canvas.classList.add('active');
+    }
+  })();
+
+  // ---------- Scroll progress HUD bar ----------
+  (function(){
+    const bar = document.getElementById('scrollProgress');
+    if(!bar) return;
+    function update(){
+      const scrollTop  = window.scrollY;
+      const docHeight  = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      bar.style.width = pct + '%';
+    }
+    window.addEventListener('scroll', update, { passive:true });
+    window.addEventListener('resize', update);
+    update();
   })();
 
 </script>
