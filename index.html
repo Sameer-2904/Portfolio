@@ -355,6 +355,40 @@
   @media(prefers-reduced-motion:reduce){
     .glow-letter{ animation:none; }
   }
+
+  /* Same staggered glow-flicker as the name, tuned for button text.
+     Ghost button (light text on dark)  -> cyan halo, exactly like the name.
+     Primary button (dark text on cyan) -> letters flash white with a white halo,
+     because a cyan glow would vanish against the cyan fill. */
+  .glow-text{ display:inline-block; white-space:nowrap; }
+  .btn-glow-letter{
+    display:inline-block;
+    animation:btnGlowGhost 3s ease-in-out infinite;
+  }
+  .btn-glow-space{ display:inline-block; width:.6em; }
+  .btn-primary .btn-glow-letter{ animation-name:btnGlowPrimary; }
+  @keyframes btnGlowGhost{
+    0%, 100%{
+      text-shadow:
+        0 0 5px var(--cyan),
+        0 0 12px var(--cyan),
+        0 0 22px rgba(76,201,240,.8);
+    }
+    8%, 92%{ text-shadow:none; }
+  }
+  @keyframes btnGlowPrimary{
+    0%, 100%{
+      color:#fff;
+      text-shadow:
+        0 0 4px #fff,
+        0 0 10px rgba(255,255,255,.95),
+        0 0 20px rgba(255,255,255,.7);
+    }
+    8%, 92%{ color:#04121c; text-shadow:none; }
+  }
+  @media(prefers-reduced-motion:reduce){
+    .btn-glow-letter{ animation:none !important; }
+  }
   .role-line{
     font-family:'JetBrains Mono',monospace;
     font-size:clamp(15px,2.4vw,20px);
@@ -1252,6 +1286,7 @@
   .cert-groups{display:grid; grid-template-columns:1fr; gap:18px;}
   @media(min-width:820px){.cert-groups{grid-template-columns:repeat(2,1fr);}}
   .cert-group{background:var(--panel-alt); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px;}
+  @media(min-width:820px){ .cert-group-wide{grid-column:1 / -1;} }
   .cert-group .issuer{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--amber); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;}
   .cert-group ul{list-style:none; font-size:14px; color:var(--text);}
   .cert-group li{padding:4px 0; color:var(--muted);}
@@ -1654,6 +1689,50 @@
     }
   }
 
+  /* Featured cards — project image on top, text below.
+     Image paths are placeholders: swap the src in each .featured-media <img>. */
+  .featured-card{ padding:0; }
+  .featured-media{
+    position:relative;
+    z-index:1;
+    aspect-ratio:16 / 9;
+    overflow:hidden;
+    background:
+      linear-gradient(135deg, rgba(76,201,240,.14), rgba(157,123,255,.12)),
+      var(--panel-alt);
+    border-bottom:1px solid rgba(76,201,240,.25);
+  }
+  .featured-media img{
+    display:block;
+    width:100%; height:100%;
+    object-fit:cover;
+    transition:transform .6s cubic-bezier(.4,0,.2,1);
+  }
+  .featured-card:hover .featured-media img{ transform:scale(1.04); }
+  /* soft fade from the image into the card body */
+  .featured-media::after{
+    content:'';
+    position:absolute; inset:auto 0 0 0; height:38%;
+    background:linear-gradient(to bottom, transparent, rgba(15,23,41,.75));
+    pointer-events:none;
+  }
+  /* fallback shown until the real image exists (or if the path is wrong) */
+  .featured-media.no-img img{ display:none; }
+  .featured-media.no-img::before{
+    content:attr(data-emoji);
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:56px;
+    opacity:.55;
+  }
+  .featured-content{ padding:28px 32px 32px; }
+  @media(max-width:760px){ .featured-content{ padding:22px 22px 26px; } }
+  @media(max-width:390px){ .featured-content{ padding:20px; } }
+  @media(prefers-reduced-motion:reduce){
+    .featured-media img{ transition:none; }
+    .featured-card:hover .featured-media img{ transform:none; }
+  }
+
   /* Certificate Gallery — 2-3 up grid of horizontal accordion bars (hover expands the row naturally, no overlap) */
   .cert-gallery{
     display:grid;
@@ -1702,7 +1781,7 @@
     background:linear-gradient(180deg, rgba(8,13,24,0.05) 0%, rgba(8,13,24,0.92) 100%);
   }
   .cert-gallery-name{
-    position:absolute; left:16px; top:50%; transform:translateY(-50%);
+    position:absolute; left:16px; right:14px; top:50%; transform:translateY(-50%);
     display:flex; align-items:center; gap:10px;
     font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px;
     z-index:2;
@@ -1714,6 +1793,30 @@
     transform:translateY(0);
     font-size:16px;
   }
+  .cert-gallery-title{
+    min-width:0;
+    line-height:1.25;
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+    line-clamp:2;
+    overflow:hidden;
+    overflow-wrap:anywhere;
+  }
+  .cert-gallery-item:hover .cert-gallery-title,
+  .cert-gallery-item:focus-visible .cert-gallery-title{
+    -webkit-line-clamp:3;
+    line-clamp:3;
+  }
+  .cert-gallery-item:focus-visible{
+    height:230px;
+    filter:grayscale(0%);
+    border-color:var(--cyan);
+    outline:2px solid var(--cyan);
+    outline-offset:2px;
+  }
+  .cert-gallery-item:focus-visible .cert-gallery-name{ top:20px; transform:translateY(0); font-size:16px; }
+  .cert-gallery-item:focus-visible .cert-gallery-overview{ opacity:1; transform:translateY(0); }
   .cert-gallery-icon{
     width:28px; height:28px;
     border-radius:7px;
@@ -2108,11 +2211,11 @@
         <div class="role-line mono" id="roleLine"></div>
         <p class="desc">I sit at the intersection of security operations, data analytics and full-stack engineering — building intrusion detection systems, BI dashboards and authentication services that actually ship. Based in Jaipur, Rajasthan.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="#projects">View Projects</a>
-          <a class="btn btn-ghost" href="./certificates/Sameer_Singh_Resume.pdf" target="_blank" rel="noopener">Resume</a>
-          <a class="btn btn-ghost" href="#contact">Get in Touch</a>
-          <a class="btn btn-ghost" href="https://github.com/Sameer-2904" target="_blank" rel="noopener">GitHub</a>
-          <a class="btn btn-ghost" href="https://www.linkedin.com/in/sameer-singh-230170406" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="btn btn-primary btn-glow" href="#projects">View Projects</a>
+          <a class="btn btn-ghost btn-glow" href="./certificates/Sameer_Singh_Resume.pdf" target="_blank" rel="noopener">Resume</a>
+          <a class="btn btn-ghost btn-glow" href="#contact">Get in Touch</a>
+          <a class="btn btn-ghost btn-glow" href="https://github.com/Sameer-2904" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn btn-ghost btn-glow" href="https://www.linkedin.com/in/sameer-singh-230170406" target="_blank" rel="noopener">LinkedIn</a>
         </div>
         <div class="stat-row reveal">
           <div class="stat"><div class="num">6+</div><div class="label">SHIPPED PROJECTS</div></div>
@@ -2166,6 +2269,9 @@
         </div>
         <div class="featured-grid">
           <div class="featured-card reveal">
+            <div class="featured-media" data-emoji="📊">
+              <img src="./certificates/Smart City.png" alt="Smart City Mobility Intelligence Platform — Power BI dashboard screenshot" loading="lazy" onerror="this.parentElement.classList.add('no-img')">
+            </div>
             <div class="featured-content">
               <div class="featured-badge">📊 DATA / ANALYTICS</div>
               <h3 class="featured-title">Smart City Mobility Intelligence Platform</h3>
@@ -2177,6 +2283,9 @@
             </div>
           </div>
           <div class="featured-card reveal">
+            <div class="featured-media" data-emoji="🍽️">
+              <img src="./Certificates/dine-luxe.png" alt="Dine-Luxe — restaurant discovery platform screenshot" loading="lazy" onerror="this.parentElement.classList.add('no-img')">
+            </div>
             <div class="featured-content">
               <div class="featured-badge">🍽️ WEB / FULLSTACK</div>
               <h3 class="featured-title">Dine-Luxe</h3>
@@ -2188,6 +2297,9 @@
             </div>
           </div>
           <div class="featured-card reveal">
+            <div class="featured-media" data-emoji="🔒">
+              <img src="./Certificates/network-ids.png" alt="Network Intrusion Detection System — alert dashboard screenshot" loading="lazy" onerror="this.parentElement.classList.add('no-img')">
+            </div>
             <div class="featured-content">
               <div class="featured-badge">🔒 SECURITY / SOC</div>
               <h3 class="featured-title">Network Intrusion Detection System</h3>
@@ -2199,6 +2311,9 @@
             </div>
           </div>
           <div class="featured-card reveal">
+            <div class="featured-media" data-emoji="🔐">
+              <img src="./Certificates/secure-auth-mfa.png" alt="Secure Authentication System with MFA — screenshot" loading="lazy" onerror="this.parentElement.classList.add('no-img')">
+            </div>
             <div class="featured-content">
               <div class="featured-badge">🔐 SECURITY / AUTH</div>
               <h3 class="featured-title">Secure Authentication System with MFA</h3>
@@ -2352,7 +2467,7 @@
         <div class="htl-outer" id="htlOuter">
           <div class="htl-track" id="htlTrack">
 
-            <!-- Item 1 — card BELOW the line -->
+            <!-- Item 1 — card BELOW the line (current) -->
             <div class="htl-item">
               <div class="htl-above">
                 <div class="htl-year">2026</div>
@@ -2362,11 +2477,11 @@
                 <div class="htl-card cat-data">
                   <span class="htl-current-tag">CURRENT</span>
                   <div class="htl-role"><span class="htl-icon">📊</span>Data Analyst</div>
-                  <div class="htl-org">Infosys Springboard 7.0</div>
-                  <div class="htl-date">JUL 2026 — AUG 2026</div>
+                  <div class="htl-org">InAmigos Foundation</div>
+                  <div class="htl-date">SEP 2026 — PRESENT</div>
                   <ul>
-                    <li>Designed a Smart Mobility Analytics platform in Power BI integrating Delhi Bus GTFS, Metro GTFS, traffic, weather, and demographic datasets.</li>
-                    <li>Built 5+ interactive dashboards turning multimodal transit data into ridership and demand insights for stakeholder review.</li>
+                    <li>Now working as a Data Analyst at InAmigos Foundation.</li>
+                    <li>Collected data of various types.</li>
                   </ul>
                 </div>
               </div>
@@ -2375,6 +2490,29 @@
             <!-- Item 2 — card ABOVE the line -->
             <div class="htl-item">
               <div class="htl-above">
+                <div class="htl-card cat-data">
+                  <div class="htl-role"><span class="htl-icon">📊</span>Data Analyst</div>
+                  <div class="htl-org">Infosys Springboard 7.0</div>
+                  <div class="htl-date">JUL 2026 — AUG 2026</div>
+                  <ul>
+                    <li>Designed a Smart Mobility Analytics platform in Power BI integrating Delhi Bus GTFS, Metro GTFS, traffic, weather, and demographic datasets.</li>
+                    <li>Built 5+ interactive dashboards turning multimodal transit data into ridership and demand insights for stakeholder review.</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-year">2026</div>
+              </div>
+            </div>
+
+            <!-- Item 3 — card BELOW the line -->
+            <div class="htl-item">
+              <div class="htl-above">
+                <div class="htl-year">2025–2026</div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
                 <div class="htl-card cat-security">
                   <div class="htl-role"><span class="htl-icon">🔒</span>Cybersecurity Intern</div>
                   <div class="htl-org">Hack Secure</div>
@@ -2384,19 +2522,11 @@
                   </ul>
                 </div>
               </div>
-              <div class="htl-dot" aria-hidden="true"></div>
-              <div class="htl-below">
-                <div class="htl-year">2025–2026</div>
-              </div>
             </div>
 
-            <!-- Item 3 — card BELOW the line -->
+            <!-- Item 4 — card ABOVE the line -->
             <div class="htl-item">
               <div class="htl-above">
-                <div class="htl-year">2025</div>
-              </div>
-              <div class="htl-dot" aria-hidden="true"></div>
-              <div class="htl-below">
                 <div class="htl-card cat-security">
                   <div class="htl-role"><span class="htl-icon">🔒</span>Cybersecurity Intern</div>
                   <div class="htl-org">AICTE</div>
@@ -2405,6 +2535,10 @@
                     <li>Gained applied exposure to network security concepts and vulnerability assessment methodology through AICTE-affiliated internship coursework.</li>
                   </ul>
                 </div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-year">2025</div>
               </div>
             </div>
 
@@ -2424,6 +2558,18 @@
             <div class="vtl-dot vtl-dot-current"></div>
             <div class="vtl-content cat-data">
               <span class="htl-current-tag">CURRENT</span>
+              <div class="vtl-date">SEP 2026 — PRESENT</div>
+              <div class="vtl-role"><span class="htl-icon">📊</span>Data Analyst</div>
+              <div class="vtl-org">InAmigos Foundation</div>
+              <ul>
+                <li>Now working as a Data Analyst at InAmigos Foundation.</li>
+                <li>Collected data of various types.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="vtl-item reveal">
+            <div class="vtl-dot"></div>
+            <div class="vtl-content cat-data">
               <div class="vtl-date">JUL 2026 — AUG 2026</div>
               <div class="vtl-role"><span class="htl-icon">📊</span>Data Analyst</div>
               <div class="vtl-org">Infosys Springboard 7.0</div>
@@ -2472,273 +2618,287 @@
           <div class="cert-gallery reveal" id="certVerifyGrid">
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/ethical-hacker.png')" onclick="openCertModal('Ethical Hacker', 'Cisco', 'EthicalHackerUpdate20260401-31-6bq6f0.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔒</span>Ethical Hacker</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🧑‍💻</span><span class="cert-gallery-title">Ethical Hacker</span></div>
               <div class="cert-gallery-overview">
                 <p>Cisco Networking Academy &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/data-analytics-essentials.png')" onclick="openCertModal('Data Analytics Essentials', 'Cisco', 'DataAnalyticsEssentialsUpdate20260802-8-wxwnpx.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">📊</span>Data Analytics Essentials</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📊</span><span class="cert-gallery-title">Data Analytics Essentials</span></div>
               <div class="cert-gallery-overview">
                 <p>Cisco Networking Academy &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/SQL Injection Attacks.png')" onclick="openCertModal('SQL Injection Attacks', 'EC-Council', 'SQL Injection Attacks.png')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">💻</span>SQL Injection Attacks</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">💉</span><span class="cert-gallery-title">SQL Injection Attacks</span></div>
               <div class="cert-gallery-overview">
                 <p>EC-Council &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/Introduction to Dark Web, Anonymity, and Cryptocurrency.png')" onclick="openCertModal('Introduction to Dark Web', 'EC-Council', 'Introduction to Dark Web, Anonymity, and Cryptocurrency.png')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🕵️</span>Intro to Dark Web & Anonymity</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🕵️</span><span class="cert-gallery-title">Intro to Dark Web & Anonymity</span></div>
               <div class="cert-gallery-overview">
                 <p>EC-Council &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/google-cloud-cybersecurity-certificate.png')" onclick="openCertModal('Google Cloud Cybersecurity', 'Google Cloud', 'google-cloud-cybersecurity-certificate.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🚀</span>Career Launchpad Cybersecurity</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🚀</span><span class="cert-gallery-title">Career Launchpad Cybersecurity</span></div>
               <div class="cert-gallery-overview">
                 <p>Google Cloud &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/aws-academy-graduate-cloud-foundations-training-bad.png')" onclick="openCertModal('AWS Cloud Foundations', 'AWS', 'AWS_Academy_Graduate___Cloud_Foundations___Training_Badge_Badge20260125-31-v5ti6k.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">☁️</span>Cloud Foundations Training</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">☁️</span><span class="cert-gallery-title">Cloud Foundations Training</span></div>
               <div class="cert-gallery-overview">
                 <p>AWS Academy &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item" style="--cert-bg:url('./certificates/junior-cybersecurity-analyst-career-path.1.png')" onclick="openCertModal('Junior Cybersecurity Analyst', 'Cisco', 'JuniorCybersecurityAnalystUpdate20260915-21-2r1s9l.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span>Junior Cybersecurity Analyst</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔰</span><span class="cert-gallery-title">Junior Cybersecurity Analyst</span></div>
               <div class="cert-gallery-overview">
                 <p>Cisco Networking Academy &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/cybersecurity-defense-analyst-career-path.png')" onclick="openCertModal('Cybersecurity Defense Analyst', 'Cisco', 'CybersecurityDefenseAnalystCareerPathv120260915-21-3w8gt2.pdf')">
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/cybersecurity-defense-analyst-career-path.png')" onclick="openCertModal('Cybersecurity Defense Analyst', 'Cisco, Splunk', 'CybersecurityDefenseAnalystCareerPathv120260915-21-3w8gt2.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span>Cybersecurity Defense Analyst</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span><span class="cert-gallery-title">Cybersecurity Defense Analyst</span></div>
               <div class="cert-gallery-overview">
-                <p>Cisco Networking Academy &middot; Click to preview &amp; download</p>
+                <p>Cisco Networking Academy, Splunk &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/CertificateOfCompletion_Introduction to Career Skills in Data Analytics.jpg')" onclick="openCertModal('Career Skills in Data Analytics', 'LinkedIn', 'CertificateOfCompletion_Introduction to Career Skills in Data Analytics.pdf')">
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/Cybersecurity Landscape.jpg')" onclick="openCertModal('The Cybersecurity Landscape', 'Splunk', 'Cybersecurity Landscape.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">💼</span>Career Skills in Data Analytics</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🗺️</span><span class="cert-gallery-title">Cybersecurity Landscape</span></div>
+              <div class="cert-gallery-overview">
+                <p>Splunk &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Understanding Threats and Attacks.jpg')" onclick="openCertModal('Understanding Threats and Attacks', 'Splunk', 'Understanding Threats and Attacks.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">⚠️</span><span class="cert-gallery-title">Understanding Threats and Attacks</span></div>
+              <div class="cert-gallery-overview">
+                <p>Splunk &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/CertificateOfCompletion_Introduction to Career Skills in Data Analytics.jpg')" onclick="openCertModal('Career Skills in Data Analytics', 'LinkedIn', 'CertificateOfCompletion_Introduction to Career Skills in Data Analytics.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">💼</span><span class="cert-gallery-title">Career Skills in Data Analytics</span></div>
               <div class="cert-gallery-overview">
                 <p>LinkedIn Learning &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/CertificateOfCompletion_Microsoft Azure AI Essentials Workloads and Machine Learning on Azure.jpg')" onclick="openCertModal('Microsoft Azure AI', 'LinkedIn', 'CertificateOfCompletion_Microsoft Azure AI Essentials Workloads and Machine Learning on Azure.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🤖</span>Azure AI Essentials & ML</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🤖</span><span class="cert-gallery-title">Azure AI Essentials & ML</span></div>
               <div class="cert-gallery-overview">
                 <p>LinkedIn Learning &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/CertificateOfCompletion_What Is Business Analysis.jpg')" onclick="openCertModal('Business Analysis', 'LinkedIn', 'CertificateOfCompletion_What Is Business Analysis.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">📈</span>Business Analysis</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📈</span><span class="cert-gallery-title">Business Analysis</span></div>
               <div class="cert-gallery-overview">
                 <p>LinkedIn Learning &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/MATLAB certificate.jpg')" onclick="openCertModal('MATLAB Onramp', 'MathWorks', 'MATLAB report.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">📐</span>MATLAB Onramp</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📐</span><span class="cert-gallery-title">MATLAB Onramp</span></div>
               <div class="cert-gallery-overview">
                 <p>MathWorks &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Simulink certificate.jpg')" onclick="openCertModal('Simulink Onramp', 'MathWorks', 'Simulink report.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">⚙️</span>Simulink Onramp</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">⚙️</span><span class="cert-gallery-title">Simulink Onramp</span></div>
               <div class="cert-gallery-overview">
                 <p>MathWorks &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Simscape Battery certificate.jpg')" onclick="openCertModal('Simscape Battery', 'MathWorks', 'Simscape Battery report.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔋</span>Simscape Battery</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔋</span><span class="cert-gallery-title">Simscape Battery</span></div>
               <div class="cert-gallery-overview">
                 <p>MathWorks &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Data Science & Analytics.jpg')" onclick="openCertModal('Data Science & Analytics', 'HP LIFE', 'Data Science & Analytics.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">📚</span>Data Science & Analytics</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔬</span><span class="cert-gallery-title">Data Science & Analytics</span></div>
               <div class="cert-gallery-overview">
                 <p>HP LIFE &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Agile Project Management.jpg')" onclick="openCertModal('Agile Project Management', 'HP LIFE', 'Agile Project Management.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span>Agile Project Management</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔄</span><span class="cert-gallery-title">Agile Project Management</span></div>
               <div class="cert-gallery-overview">
                 <p>HP LIFE &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Business Communications.jpg')" onclick="openCertModal('Business Communications', 'HP LIFE', 'Business Communications.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span>Business Communications</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">💬</span><span class="cert-gallery-title">Business Communications</span></div>
               <div class="cert-gallery-overview">
                 <p>HP LIFE &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Wadhwani Foundation Certificate.jpg')" onclick="openCertModal('Problem Solving & Innovation', 'Wadhwani Foundation', 'Wadhwani Foundation Certificate.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">💡</span>Problem Solving & Innovation</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">💡</span><span class="cert-gallery-title">Problem Solving & Innovation</span></div>
               <div class="cert-gallery-overview">
                 <p>Wadhwani Foundation &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Supply Chain Management.jpg')" onclick="openCertModal('Supply Chain Management', 'Skill India', 'Supply Chain Management.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔗</span>Supply Chain Management</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🚚</span><span class="cert-gallery-title">Supply Chain Management</span></div>
               <div class="cert-gallery-overview">
                 <p>Skill India &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/SOC Analyst.jpg')" onclick="openCertModal('SOC Analyst', 'Skill India', 'SOC Analyst.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span>SOC Analyst</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🚨</span><span class="cert-gallery-title">SOC Analyst</span></div>
               <div class="cert-gallery-overview">
                 <p>Skill India &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Security Analyst.jpg')" onclick="openCertModal('SOC Analyst', 'Skill India', 'Security Analyst.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Security Analyst.jpg')" onclick="openCertModal('Security Analyst', 'Skill India', 'Security Analyst.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛡️</span>Security Analyst</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔍</span><span class="cert-gallery-title">Security Analyst</span></div>
               <div class="cert-gallery-overview">
                 <p>Skill India &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Network Security Engineer.jpg')" onclick="openCertModal('Network Security Engineer', 'Skill India', 'Network Security Engineer.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛜</span>Network Security Engineer</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🧱</span><span class="cert-gallery-title">Network Security Engineer</span></div>
               <div class="cert-gallery-overview">
                 <p>Skill India &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Application Security Analyst.jpg')" onclick="openCertModal('Application Security Analyst', 'Skill India', 'Application Security Analyst.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🌐</span>Application Security Analyst</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🐞</span><span class="cert-gallery-title">Application Security Analyst</span></div>
               <div class="cert-gallery-overview">
                 <p>Skill India &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Information Security Analyst.jpg')" onclick="openCertModal('Information Security Analyst', 'Skill India', 'Information Security Analyst.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">ℹ️</span>Information Security Analyst</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔒</span><span class="cert-gallery-title">Information Security Analyst</span></div>
               <div class="cert-gallery-overview">
                 <p>Skill India &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/OCI25FNDCFA.jpeg')" onclick="openCertModal('Oracle Cloud Infrastructure', 'Oracle', 'eCertificate.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Oracle Cloud Infrastructure</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🏗️</span><span class="cert-gallery-title">Oracle Cloud Infrastructure</span></div>
               <div class="cert-gallery-overview">
                 <p>Oracle &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Data Science.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Data Science.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Data Science.jpg')" onclick="openCertModal('Data Science', 'Infosys Springboard', 'Data Science.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Data Science</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🧪</span><span class="cert-gallery-title">Data Science</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Software Engineering and Agile software development.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Software Engineering and Agile software development.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Software Engineering and Agile software development.jpg')" onclick="openCertModal('Software Engineering and Agile Software Development', 'Infosys Springboard', 'Software Engineering and Agile software development.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Software Engineering and Agile software development</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛠️</span><span class="cert-gallery-title">Software Engineering and Agile software development</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/TechA Data Analytics using Power BI Foundation Certification.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'TechA Data Analytics using Power BI Foundation Certification.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/TechA Data Analytics using Power BI Foundation Certification.jpg')" onclick="openCertModal('TechA Data Analytics using Power BI Foundation', 'Infosys Springboard', 'TechA Data Analytics using Power BI Foundation Certification.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>TechA Data Analytics using Power BI Foundation Certification</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">⚡</span><span class="cert-gallery-title">TechA Data Analytics using Power BI Foundation Certification</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Multidimensional Data Modeling.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Multidimensional Data Modeling.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Multidimensional Data Modeling.jpg')" onclick="openCertModal('Multidimensional Data Modeling', 'Infosys Springboard', 'Multidimensional Data Modeling.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Multidimensional Data Modeling</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🧊</span><span class="cert-gallery-title">Multidimensional Data Modeling</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Power BI for Business Professionals.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Power BI for Business Professionals.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Power BI for Business Professionals.jpg')" onclick="openCertModal('Power BI for Business Professionals', 'Infosys Springboard', 'Power BI for Business Professionals.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Power BI for Business Professionals</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">👔</span><span class="cert-gallery-title">Power BI for Business Professionals</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Hands-On Data Visualization with Microsoft Power BI.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Hands-On Data Visualization with Microsoft Power BI.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Hands-On Data Visualization with Microsoft Power BI.jpg')" onclick="openCertModal('Hands-On Data Visualization with Microsoft Power BI', 'Infosys Springboard', 'Hands-On Data Visualization with Microsoft Power BI.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Hands-On Data Visualization with Microsoft Power BI</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎨</span><span class="cert-gallery-title">Hands-On Data Visualization with Microsoft Power BI</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Big Data.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Big Data.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Big Data.jpg')" onclick="openCertModal('Big Data', 'Infosys Springboard', 'Big Data.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Big Data</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🗄️</span><span class="cert-gallery-title">Big Data</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Cloud Technologies.jpg')" onclick="openCertModal('Infosys', 'Infosys Springboard', 'Cloud Technologies.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Cloud Technologies.jpg')" onclick="openCertModal('Cloud Technologies', 'Infosys Springboard', 'Cloud Technologies.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎯</span>Cloud Technologies</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🌩️</span><span class="cert-gallery-title">Cloud Technologies</span></div>
               <div class="cert-gallery-overview">
                 <p>Infosys Springboard &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Bhartiya Antariksh Hackathon2026H2S06BAH-P00846.jpg')" onclick="openCertModal('Bharatiya Antariksh Hackathon', 'Hackathon', 'Bhartiya Antariksh Hackathon2026H2S06BAH-P00846.pdf')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Bhartiya Antariksh Hackathon2026H2S06BAH-P00846.jpg')" onclick="openCertModal('Bharatiya Antariksh Hackathon', 'Bharatiya Antariksh Hackathon', 'Bhartiya Antariksh Hackathon2026H2S06BAH-P00846.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛰️</span>Bharatiya Antariksh Hackathon</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🛰️</span><span class="cert-gallery-title">Bharatiya Antariksh Hackathon</span></div>
               <div class="cert-gallery-overview">
                 <p>Space Tech Competition 2026 &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/AI for Bharat.png')" onclick="openCertModal('AI for Bharat', 'Hackathon', 'AI for Bharat.png')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🤖</span>AI for Bharat</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🧠</span><span class="cert-gallery-title">AI for Bharat</span></div>
               <div class="cert-gallery-overview">
                 <p>AI Innovation Hackathon &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Participants.png')" onclick="openCertModal('AI for Bharat', 'Hackathon', 'Participants.png')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Participants.png')" onclick="openCertModal('OneEarth International Hackathon', 'Hackathon 2025', 'Participants.png')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🤖</span>OneEarth International Hackathon</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🌍</span><span class="cert-gallery-title">OneEarth International Hackathon</span></div>
               <div class="cert-gallery-overview">
-                <p>AI Innovation Hackathon &middot; Click to preview &amp; download</p>
+                <p>International Hackathon 2025 &middot; Click to preview &amp; download</p>
               </div>
             </div>
-            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Sameer singh (Team Name_ MindMakers).png')" onclick="openCertModal('MindMakers Team', 'Hackathon', 'Sameer singh (Team Name_ MindMakers).png')">
+            <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Sameer singh (Team Name_ MindMakers).png')" onclick="openCertModal('HackSecure X International Hackathon', 'Hackathon 2026 · Team MindMakers', 'Sameer singh (Team Name_ MindMakers).png')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">👥</span>HackSecure X International Hackathon</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">👥</span><span class="cert-gallery-title">HackSecure X International Hackathon</span></div>
               <div class="cert-gallery-overview">
-                <p>Hackathon Participation &middot; Click to preview &amp; download</p>
+                <p>Hackathon 2026 &middot; Team MindMakers &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/certified_llm_certificate.jpg')" onclick="openCertModal('Certified LLM Security', 'Red Team Leaders', 'certified_llm_certificate.pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔐</span>Certified LLM Security Professional</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔐</span><span class="cert-gallery-title">Certified LLM Security Professional</span></div>
               <div class="cert-gallery-overview">
                 <p>Red Team Leaders &middot; Click to preview &amp; download</p>
               </div>
             </div>
             <div class="cert-gallery-item extra-cert" style="--cert-bg:url('./certificates/Certified Cybersecurity Educator Professional (CCEP).jpg')" onclick="openCertModal('Certified Cybersecurity Educator Professional (CCEP)', 'Red Team Leaders', 'Certified Cybersecurity Educator Professional (CCEP).pdf')">
               <div class="cert-gallery-shade"></div>
-              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔐</span>Certified Cybersecurity Educator Professional (CCEP)</div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🎓</span><span class="cert-gallery-title">Certified Cybersecurity Educator Professional (CCEP)</span></div>
               <div class="cert-gallery-overview">
                 <p>Red Team Leaders &middot; Click to preview &amp; download</p>
               </div>
@@ -2753,8 +2913,8 @@
         <!-- Training Overview -->
         <div class="cert-groups reveal">
           <div class="cert-group">
-            <div class="issuer">Cisco Networking Academy</div>
-            <ul><li>Ethical Hacker</li><li>Data Analytics Essentials</li></ul>
+            <div class="issuer">Cisco Networking Academy, Splunk</div>
+            <ul><li>Ethical Hacker</li><li>Data Analytics Essentials</li><li>Junior Cybersecurity Analyst · Cybersecurity Defense Analyst</li><li>Cybersecurity Landscape · Understanding Threats and Attacks (Splunk)</li></ul>
           </div>
           <div class="cert-group">
             <div class="issuer">EC-Council</div>
@@ -2766,7 +2926,7 @@
           </div>
           <div class="cert-group">
             <div class="issuer">Infosys Springboard</div>
-            <ul><li>Cloud Technologies</li><li>Data Visualization in Power BI</li></ul>
+            <ul><li>Data Science · Big Data · Cloud Technologies</li><li>Power BI — Foundation, Business Professionals, Hands-On Visualization</li><li>Multidimensional Data Modeling · Software Engineering &amp; Agile</li></ul>
           </div>
           <div class="cert-group">
             <div class="issuer">LinkedIn Learning</div>
@@ -2774,7 +2934,11 @@
           </div>
           <div class="cert-group">
             <div class="issuer">HP LIFE / MathWorks / Others</div>
-            <ul><li>Data Science & Analytics · Cyber Security Awareness (HP LIFE)</li><li>MATLAB, Simulink & Simscape Onramp (MathWorks)</li><li>Certified LLM Security Professional (CLLMSP) · Red Team Leaders</li></ul>
+            <ul><li>Data Science &amp; Analytics · Cyber Security Awareness · Agile Project Management · Business Communications (HP LIFE)</li><li>MATLAB, Simulink & Simscape Onramp (MathWorks)</li><li>Certified LLM Security Professional (CLLMSP) · Certified Cybersecurity Educator (CCEP) · Red Team Leaders</li><li>Problem Solving &amp; Innovation (Wadhwani Foundation)</li></ul>
+          </div>
+          <div class="cert-group cert-group-wide">
+            <div class="issuer">Skill India</div>
+            <ul><li>SOC Analyst · Security Analyst · Information Security Analyst</li><li>Network Security Engineer · Application Security Analyst</li><li>Supply Chain Management</li></ul>
           </div>
         </div>
 
@@ -3547,10 +3711,27 @@
   const certVerifyGrid = document.getElementById('certVerifyGrid');
 
   if (certViewAllBtn && certVerifyGrid) {
+    const certTotal = certVerifyGrid.querySelectorAll('.cert-gallery-item').length;
+    const certLabelMore = `View All Certificates ↓`;
+    certViewAllBtn.textContent = certLabelMore;
     certViewAllBtn.addEventListener('click', () => {
       const expanded = certVerifyGrid.classList.toggle('show-all');
       certViewAllBtn.setAttribute('aria-expanded', String(expanded));
-      certViewAllBtn.textContent = expanded ? 'Show Less ↑' : 'View All Certificates ↓';
+      certViewAllBtn.textContent = expanded ? 'Show Less ↑' : certLabelMore;
+      if(!expanded){
+        // grid just got much shorter — bring the top of it back into view
+        certVerifyGrid.scrollIntoView({ behavior:'smooth', block:'center' });
+      }
+    });
+
+    // Certificate cards are <div>s — make them reachable with the keyboard too
+    certVerifyGrid.querySelectorAll('.cert-gallery-item').forEach(card => {
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', card.querySelector('.cert-gallery-title').textContent.trim() + ' — preview certificate');
+      card.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); card.click(); }
+      });
     });
   }
 
@@ -3848,6 +4029,32 @@
       span.textContent = ch;
       span.setAttribute('aria-hidden', 'true');
       el.appendChild(span);
+    });
+  })();
+
+  // ---------- Hero buttons: same staggered glow-flicker letters as the name ----------
+  (function(){
+    document.querySelectorAll('.btn-glow').forEach((btn, btnIdx) => {
+      const text = btn.textContent.trim();
+      btn.setAttribute('aria-label', text);
+      btn.textContent = '';
+      const wrap = document.createElement('span');   // single flex child -> keeps .btn layout intact
+      wrap.className = 'glow-text';
+      wrap.setAttribute('aria-hidden', 'true');
+      const delayStep = 0.12;                        // seconds between letters
+      const startOffset = btnIdx * 0.7;              // buttons don't flash in sync
+      [...text].forEach((ch, i) => {
+        const span = document.createElement('span');
+        if(ch === ' '){
+          span.className = 'btn-glow-space';
+        } else {
+          span.className = 'btn-glow-letter';
+          span.style.animationDelay = (startOffset + i * delayStep) + 's';
+          span.textContent = ch;
+        }
+        wrap.appendChild(span);
+      });
+      btn.appendChild(wrap);
     });
   })();
 
