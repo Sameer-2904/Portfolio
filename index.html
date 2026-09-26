@@ -670,6 +670,9 @@
   .htl-item:nth-child(5) .htl-above,
   .htl-item:nth-child(5) .htl-dot,
   .htl-item:nth-child(5) .htl-below{ transition-delay:.72s; }
+  .htl-item:nth-child(6) .htl-above,
+  .htl-item:nth-child(6) .htl-dot,
+  .htl-item:nth-child(6) .htl-below{ transition-delay:.9s; }
 
   /* ---- Hover effects ---- */
   .htl-item:hover .htl-dot{
@@ -710,6 +713,7 @@
   }
   .htl-card.cat-data{ border-top:3px solid var(--amber); }
   .htl-card.cat-security{ border-top:3px solid var(--cyan); }
+  .htl-card.cat-dev{ border-top:3px solid var(--violet); }
   .htl-icon{
     display:inline-flex; align-items:center; justify-content:center;
     width:20px; height:20px;
@@ -882,6 +886,7 @@
     }
     .vtl-content.cat-data{ border-top:3px solid var(--amber); }
     .vtl-content.cat-security{ border-top:3px solid var(--cyan); }
+    .vtl-content.cat-dev{ border-top:3px solid var(--violet); }
     .vtl-date{
       font-family:'JetBrains Mono',monospace;
       font-size:10px; color:var(--muted);
@@ -2542,6 +2547,42 @@
               </div>
             </div>
 
+            <!-- Item 5 — card BELOW the line -->
+            <div class="htl-item">
+              <div class="htl-above">
+                <div class="htl-year">2025</div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-card cat-security">
+                  <div class="htl-role"><span class="htl-icon">🔐</span>Cyber Security Intern</div>
+                  <div class="htl-org">CodeAlpha</div>
+                  <div class="htl-date">JUL 2025 — OCT 2025</div>
+                  <ul>
+                    <li>Completed the CodeAlpha Virtual Internship Program in Cyber Security, working on hands-on security tasks and projects.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item 6 — card ABOVE the line -->
+            <div class="htl-item">
+              <div class="htl-above">
+                <div class="htl-card cat-dev">
+                  <div class="htl-role"><span class="htl-icon">🐍</span>Python Programming Intern</div>
+                  <div class="htl-org">CodSoft</div>
+                  <div class="htl-date">JUL 2025</div>
+                  <ul>
+                    <li>Completed a 4-week virtual internship in Python Programming at CodSoft, contributing to tasks and projects throughout.</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="htl-dot" aria-hidden="true"></div>
+              <div class="htl-below">
+                <div class="htl-year">2025</div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -2598,6 +2639,28 @@
               <div class="vtl-org">AICTE</div>
               <ul>
                 <li>Gained applied exposure to network security concepts and vulnerability assessment methodology through AICTE-affiliated internship coursework.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="vtl-item reveal">
+            <div class="vtl-dot"></div>
+            <div class="vtl-content cat-security">
+              <div class="vtl-date">JUL 2025 — OCT 2025</div>
+              <div class="vtl-role"><span class="htl-icon">🔐</span>Cyber Security Intern</div>
+              <div class="vtl-org">CodeAlpha</div>
+              <ul>
+                <li>Completed the CodeAlpha Virtual Internship Program in Cyber Security, working on hands-on security tasks and projects.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="vtl-item reveal">
+            <div class="vtl-dot"></div>
+            <div class="vtl-content cat-dev">
+              <div class="vtl-date">JUL 2025</div>
+              <div class="vtl-role"><span class="htl-icon">🐍</span>Python Programming Intern</div>
+              <div class="vtl-org">CodSoft</div>
+              <ul>
+                <li>Completed a 4-week virtual internship in Python Programming at CodSoft, contributing to tasks and projects throughout.</li>
               </ul>
             </div>
           </div>
@@ -2908,6 +2971,70 @@
             <button type="button" class="cert-view-all-btn" id="certViewAllBtn" aria-expanded="false" aria-controls="certVerifyGrid">View All Certificates ↓</button>
           </div>
           <p style="color:var(--muted); font-size:12px; margin-top:16px; text-align:center;">Click any certificate to preview and download</p>
+        </div>
+
+        <!-- Internship Documents -->
+        <div style="margin-bottom:48px;">
+          <div class="section-tag" style="margin-bottom:20px; color:var(--cyan);">🎓 INTERNSHIP DOCUMENTS</div>
+          <div class="cert-gallery reveal">
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/CodeAlpha Internship Complete.jpg')" onclick="openCertModal('Cyber Security Internship — Completion Certificate', 'CodeAlpha', 'CodeAlpha Internship Complete.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🔐</span><span class="cert-gallery-title">Completion Certificate — CodeAlpha</span></div>
+              <div class="cert-gallery-overview">
+                <p>CodeAlpha &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/Cyber Security Inernship at CodeAlpha.png')" onclick="openCertModal('Cyber Security Internship — Offer Letter', 'CodeAlpha', 'Cyber Security Inernship at CodeAlpha.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📄</span><span class="cert-gallery-title">Offer Letter — CodeAlpha</span></div>
+              <div class="cert-gallery-overview">
+                <p>CodeAlpha &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/LOR CodeAlpha.png')" onclick="openCertModal('Cyber Security Internship — Letter of Recommendation', 'CodeAlpha', 'LOR CodeAlpha.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">✉️</span><span class="cert-gallery-title">Letter of Recommendation — CodeAlpha</span></div>
+              <div class="cert-gallery-overview">
+                <p>CodeAlpha &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/CodSoft Intrenship Complete.jpg')" onclick="openCertModal('Python Programming Internship — Completion Certificate', 'CodSoft', 'CodSoft Intrenship Complete.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">🐍</span><span class="cert-gallery-title">Completion Certificate — CodSoft</span></div>
+              <div class="cert-gallery-overview">
+                <p>CodSoft &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/Python Programming at CodSoft.png')" onclick="openCertModal('Python Programming Internship — Offer Letter', 'CodSoft', 'Python Programming at CodSoft.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📄</span><span class="cert-gallery-title">Offer Letter — CodSoft</span></div>
+              <div class="cert-gallery-overview">
+                <p>CodSoft &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/HackSecure Offer Letter.jpeg')" onclick="openCertModal('Cyber Security Internship — Offer Letter', 'HackSecure', 'HackSecure Offer Letter.jpeg')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📄</span><span class="cert-gallery-title">Offer Letter — HackSecure</span></div>
+              <div class="cert-gallery-overview">
+                <p>HackSecure &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/Hack Secure.jpg')" onclick="openCertModal('Cyber Security Internship — Completion Certificate', 'HackSecure', 'Hack Secure.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">📄</span><span class="cert-gallery-title">Completion Certificate — HackSecure</span></div>
+              <div class="cert-gallery-overview">
+                <p>HackSecure &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+            <div class="cert-gallery-item" style="--cert-bg:url('./certificates/Course_Certificate.png')" onclick="openCertModal('AICTE Internship — Completion Certificate', 'AICTE', 'Course_Certificate.pdf')">
+              <div class="cert-gallery-shade"></div>
+              <div class="cert-gallery-name"><span class="cert-gallery-icon">✉️</span><span class="cert-gallery-title">Completion Certificate — AICTE</span></div>
+              <div class="cert-gallery-overview">
+                <p>AICTE &middot; Click to preview &amp; download</p>
+              </div>
+            </div>
+          </div>
+          <p style="color:var(--muted); font-size:12px; margin-top:16px; text-align:center;">Placeholder files — swap in the real PDFs/images under ./certificates/ with these exact filenames.</p>
         </div>
 
         <!-- Training Overview -->
