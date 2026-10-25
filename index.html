@@ -2135,6 +2135,13 @@
     box-shadow:0 0 10px var(--cyan);
     transition:width .12s linear;
   }
+
+  /* ---------- Goo-strand buttons: cursor-following shine (set by script) ---------- */
+  .goo-on{
+    background-image:
+      radial-gradient(circle 28px at var(--mx,50%) var(--my,50%), rgba(190,235,255,calc(.3*var(--sh,0))), transparent 100%),
+      radial-gradient(circle 90px at var(--mx,50%) var(--my,50%), rgba(150,225,255,calc(.18*var(--sh,0))), transparent 100%) !important;
+  }
 </style>
 </head>
 <body>
@@ -4245,6 +4252,189 @@
     }
   })();
 
+</script>
+<script>
+/* Goo-strand buttons: blue slime strands reach for the cursor from the nearest button.
+   One fixed canvas on top of the page; strands are "punched out" wherever a button is,
+   so they always look like they come from underneath it. */
+(function(){
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+
+  var SEL='.btn,.nav-cta,.nav-toggle,.cert-view-all-btn,.cert-link-btn,.htl-btn,.cert-modal-close,.pw-steer button';
+  var COLORS=['#3fb8e4','#4CC9F0','#7bdcf7'];   // strand blues (theme cyan family)
+  var MAXN=25;                                  // strands on a wide button (smaller buttons use fewer)
+
+  var cv=document.createElement('canvas');
+  cv.setAttribute('aria-hidden','true');
+  cv.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2000';
+  document.body.appendChild(cv);
+  var ctx=cv.getContext('2d'),W=0,H=0,dpr=1;
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  size();addEventListener('resize',size);
+
+  /* ---- button registry ---- */
+  var items=[],map=new Map(),seedBase=11,mt=0;
+  function mk(el){
+    var seed=seedBase=(seedBase*48271)%2147483647;
+    function rnd(){return (seed=(seed*16807)%2147483647)/2147483647;}
+    var ss=[];
+    for(var i=0;i<MAXN;i++)ss.push({thr:0.28+0.72*Math.pow(rnd(),0.8),p:0,off:rnd()*2-1,ph:rnd()*6.28,w:0.8+rnd()*1.6,col:COLORS[i%3]});
+    return {el:el,ss:ss,sh:0,lit:false,hasStr:false,vis:false,x:0,y:0,w:0,h:0,cx:0,cy:0,r:0,rw:-1,d:1e9,R:150,n:MAXN};
+  }
+  function scan(){
+    var list=document.querySelectorAll(SEL),seen=new Set(),i;
+    for(i=0;i<list.length;i++){var el=list[i];seen.add(el);if(!map.has(el)){var it=mk(el);map.set(el,it);items.push(it);}}
+    items=items.filter(function(it){if(seen.has(it.el))return true;map.delete(it.el);return false;});
+  }
+  scan();
+  new MutationObserver(function(){clearTimeout(mt);mt=setTimeout(scan,250);}).observe(document.body,{childList:true,subtree:true});
+
+  function radius(it){
+    var cs=getComputedStyle(it.el).borderTopLeftRadius,v=parseFloat(cs)||0,m=Math.min(it.w,it.h);
+    if(cs.indexOf('%')>-1)v=v/100*m;
+    return Math.min(v,m/2);
+  }
+  function sdRound(px,py,cx,cy,hw,hh,r){               // distance from point to rounded-rect edge
+    var qx=Math.abs(px-cx)-(hw-r),qy=Math.abs(py-cy)-(hh-r);
+    return Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-r;
+  }
+  function hit(it){                                    // is this button really on top (not hidden / covered)?
+    var t=document.elementFromPoint(it.cx,it.cy);
+    return !!t&&(t===it.el||it.el.contains(t));
+  }
+  function loaderOn(){var l=document.getElementById('loader');return !!l&&!l.classList.contains('hidden');}
+
+  /* ---- cursor ---- */
+  var cur={x:-9999,y:-9999,away:true};
+  addEventListener('pointermove',function(e){cur.x=e.clientX;cur.y=e.clientY;cur.away=false;},{passive:true});
+  addEventListener('pointerdown',function(e){cur.x=e.clientX;cur.y=e.clientY;cur.away=false;},{passive:true});
+  addEventListener('pointerup',function(e){if(e.pointerType!=='mouse')cur.away=true;},{passive:true});
+  document.documentElement.addEventListener('pointerleave',function(){cur.away=true;});
+  addEventListener('blur',function(){cur.away=true;});
+
+  /* ---- drawing ---- */
+  var t0=0,tNow=0,drawn=false,lastOwner=null;
+  function clearAll(){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);drawn=false;}
+
+  function drawStrings(it){
+    var bx=it.cx,by=it.cy,bh=it.h,hw=it.w/2,hh=it.h/2;
+    var dx=cur.x-bx,dy=cur.y-by,dl=Math.hypot(dx,dy)||1,ux=dx/dl,uy=dy/dl,px=-uy,py=ux;
+    var t=Math.min(hw/(Math.abs(ux)+1e-6),hh/(Math.abs(uy)+1e-6));
+    var sc=Math.max(0.45,bh/100),R=it.R;
+    ctx.strokeStyle='rgba(190,236,255,.35)';ctx.lineWidth=0.8;
+    for(var i=0;i<it.n;i++){
+      var s=it.ss[i];if(s.p<0.01)continue;
+      var sx=bx+ux*t*0.5+px*s.off*bh*0.3,sy=by+uy*t*0.5+py*s.off*bh*0.3;   // root deep inside the button
+      var ex=cur.x+px*s.off*4,ey=cur.y+py*s.off*4;
+      var e=s.p*s.p*(3-2*s.p);
+      var tx=sx+(ex-sx)*e,ty=sy+(ey-sy)*e;
+      var len=Math.hypot(ex-sx,ey-sy);
+      var dd=Math.min(1,it.d/(s.thr*R));
+      var slack=(1-dd)*len*0.3*(1-dd*0.6);
+      var whip=(1-s.p)*len*0.3+Math.sin(tNow*3.2+s.ph)*(4+slack*0.14);
+      var mx=(sx+tx)/2+px*(whip+s.off*slack*0.4),my=(sy+ty)/2+py*whip+slack*0.55;
+      var hw0=s.w*3.1*sc*(0.55+0.45*e);
+      var K=16,Lf=[],Rt=[],k;
+      for(k=0;k<=K;k++){
+        var u=k/K,v=1-u;
+        var x=v*v*sx+2*v*u*mx+u*u*tx,y=v*v*sy+2*v*u*my+u*u*ty;
+        var ddx=2*v*(mx-sx)+2*u*(tx-mx),ddy=2*v*(my-sy)+2*u*(ty-my);
+        var dn=Math.hypot(ddx,ddy)||1;ddx/=dn;ddy/=dn;
+        var neck=1-0.88*dd*Math.sin(Math.PI*u);               // goo thins out as it stretches
+        var hwid=Math.max(0.6,hw0*(Math.pow(v,0.7)*neck+0.9*Math.pow(v,6)));
+        Lf.push([x-ddy*hwid,y+ddx*hwid]);Rt.push([x+ddy*hwid,y-ddx*hwid]);
+      }
+      ctx.globalAlpha=Math.min(1,s.p*3);
+      ctx.fillStyle=s.col;
+      ctx.beginPath();ctx.moveTo(Lf[0][0],Lf[0][1]);
+      for(k=1;k<=K;k++)ctx.lineTo(Lf[k][0],Lf[k][1]);
+      for(k=K;k>=0;k--)ctx.lineTo(Rt[k][0],Rt[k][1]);
+      ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.arc(sx,sy,hw0*1.1,0,7);ctx.fill();
+      var tr=s.p<0.98?hw0*0.45*Math.sin(Math.PI*s.p)+1.4:2;   // drop at the moving tip / blob on the cursor
+      ctx.beginPath();ctx.arc(tx,ty,tr,0,7);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  function frame(now){
+    requestAnimationFrame(frame);
+    var dt=Math.min(0.033,(now-t0)/1000);t0=now;tNow=now/1000;
+    var i,it,anyActive=false;
+    for(i=0;i<items.length;i++)if(items[i].hasStr||items[i].lit){anyActive=true;break;}
+    if(document.hidden||(cur.away&&!anyActive)||loaderOn()){if(drawn)clearAll();return;}
+
+    // 1) measure (reads only)
+    var vis=[];
+    for(i=0;i<items.length;i++){
+      it=items[i];
+      var r=it.el.getBoundingClientRect();
+      it.w=r.width;it.h=r.height;it.x=r.left;it.y=r.top;
+      it.vis=r.width>2&&r.height>2&&r.bottom>-250&&r.top<H+250&&r.right>-250&&r.left<W+250;
+      if(!it.vis){it.hasStr=false;for(var q=0;q<it.ss.length;q++)it.ss[q].p=0;continue;}
+      if(Math.abs(it.w-it.rw)>1){it.r=radius(it);it.rw=it.w;}
+      it.cx=r.left+r.width/2;it.cy=r.top+r.height/2;
+      it.R=Math.max(110,Math.min(260,it.w));
+      it.n=it.w>140?MAXN:(it.w>70?18:12);
+      it.d=cur.away?1e9:Math.max(0,sdRound(cur.x,cur.y,it.cx,it.cy,it.w/2,it.h/2,it.r));
+      vis.push(it);
+    }
+
+    // 2) the nearest reachable button owns the strands
+    var owner=null;
+    if(!cur.away){
+      var cand=vis.filter(function(b){return b.d<b.R;}).sort(function(a,b){return a.d-b.d;});
+      if(cand.length){
+        if(lastOwner&&cand.indexOf(lastOwner)>-1&&lastOwner.d<cand[0].d+14&&hit(lastOwner))owner=lastOwner;
+        else for(var k=0;k<Math.min(3,cand.length);k++){if(hit(cand[k])){owner=cand[k];break;}}
+      }
+    }
+    lastOwner=owner;
+
+    // 3) update strands + shine
+    var drawList=[];
+    for(i=0;i<vis.length;i++){
+      it=vis[i];
+      var isO=it===owner,R=it.R,any=false;
+      for(var j=0;j<it.ss.length;j++){
+        var s=it.ss[j],on=isO&&j<it.n&&it.d<s.thr*R;
+        s.p+=((on?1:0)-s.p)*Math.min(1,dt*(on?(7+s.off*2):(12+s.ph)));
+        if(s.p>0.01)any=true;
+      }
+      it.hasStr=any;if(any)drawList.push(it);
+      var tgt=isO?Math.pow(Math.max(0,1-it.d/(R*0.9)),1.4):0;
+      it.sh+=(tgt-it.sh)*Math.min(1,dt*7);
+    }
+
+    // 4) draw
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+    if(drawList.length){
+      for(i=0;i<drawList.length;i++)drawStrings(drawList[i]);
+      ctx.save();ctx.globalCompositeOperation='destination-out';ctx.fillStyle='#000';
+      for(i=0;i<vis.length;i++){
+        it=vis[i];ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(it.x,it.y,it.w,it.h,it.r);else ctx.rect(it.x,it.y,it.w,it.h);
+        ctx.fill();
+      }
+      ctx.restore();
+      drawn=true;
+    }else drawn=false;
+
+    // 5) cursor-bound shine on the buttons themselves (CSS vars)
+    for(i=0;i<items.length;i++){
+      it=items[i];
+      if(it.vis&&it.sh>0.003){
+        if(!it.lit){it.el.classList.add('goo-on');it.lit=true;}
+        it.el.style.setProperty('--sh',it.sh.toFixed(3));
+        it.el.style.setProperty('--mx',(cur.x-it.x).toFixed(1)+'px');
+        it.el.style.setProperty('--my',(cur.y-it.y).toFixed(1)+'px');
+      }else if(it.lit){
+        it.el.classList.remove('goo-on');it.el.style.removeProperty('--sh');it.lit=false;
+      }
+    }
+  }
+  requestAnimationFrame(function(n){t0=n;requestAnimationFrame(frame);});
+})();
 </script>
 </body>
 
