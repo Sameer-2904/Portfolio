@@ -2050,31 +2050,16 @@
     .loader-sweep::before{ animation:none; }
     .loader-tiles .tile{ transition:none; }
   }
-  .loader-words{
-    position:absolute;
-    top:50%; left:50%;
-    transform:translate(-50%, -50%);
-    width:min(640px, 94vw);
-    height:clamp(60px, 11vw, 84px);
-    display:flex; align-items:center; justify-content:center;
+  /* Particle text canvas (Welcome! / I'm Sameer Singh / My Portfolio Website).
+     pointer-events:none so the tile hover glow underneath keeps working;
+     mouse is tracked on #loader itself. */
+  #loaderParticles{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    display:block;
     z-index:2;
+    pointer-events:none;
   }
-  .loader-word{
-    font-family:'Space Grotesk',sans-serif;
-    font-weight:300;
-    font-size:clamp(32px, 7vw, 58px);
-    letter-spacing:0.01em;
-    color:var(--text);
-    opacity:0;
-    transform:scale(0.90);
-    transition:opacity 1.1s cubic-bezier(.25,.1,.25,1), transform 1.1s cubic-bezier(.25,.1,.25,1);
-    position:absolute;
-    text-align:center;
-    white-space:nowrap;
-  }
-  .loader-word.active{ opacity:1; transform:scale(1); }
-  .loader-word.exit{ opacity:0; transform:scale(1.08); }
-  .loader-word .accent{ color:var(--cyan); font-weight:500; }
   .loader-bottom{
     position:absolute;
     left:50%;
@@ -2162,11 +2147,7 @@
   <div id="loader" role="status" aria-label="Loading portfolio">
     <div class="loader-tiles" id="loaderTiles" aria-hidden="true"></div>
     <div class="loader-sweep" aria-hidden="true"></div>
-    <div class="loader-words" aria-hidden="true">
-      <div class="loader-word" id="lw1">Welcome!</div>
-      <div class="loader-word" id="lw2">I'm Sameer&nbsp;<span class="accent">Singh</span></div>
-      <div class="loader-word" id="lw3">My Portfolio Website</div>
-    </div>
+    <canvas id="loaderParticles" aria-hidden="true"></canvas>
     <div class="loader-bottom">
       <div class="loader-term">
         <div class="term-titlebar">
@@ -3180,12 +3161,239 @@
     const body    = document.getElementById('loaderBody');
     const bar     = document.getElementById('loaderBar');
     const pctEl   = document.getElementById('loaderPct');
-    const words   = [
-      document.getElementById('lw1'),
-      document.getElementById('lw2'),
-      document.getElementById('lw3')
-    ];
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ----- Particle text engine: lots of particles rush in and snap into each word -----
+    function createParticleText(canvas, host, reduce){
+      const ctx = canvas.getContext('2d');
+      const WHITE = '#E7ECF5', CYAN = '#4CC9F0';
+      // [text, 0=white | 1=cyan] segments, per line. "narrow" = phone layout (2 lines)
+      const WORDS = [
+        { wide:[[['Welcome!',0]]],                          narrow:[[['Welcome!',0]]] },
+        { wide:[[["I'm Sameer ",0],['Singh',1]]],           narrow:[[["I'm Sameer",0]],[['Singh',1]]] },
+        { wide:[[['My Portfolio Website',0]]],              narrow:[[['My Portfolio',0]],[['Website',0]]] }
+      ];
+      const FAMILY = '"Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif';
+      let W = 0, H = 0, dpr = 1, N = 1400;
+      let parts = [], strays = [], glows = [], targets = [];
+      let cur = 0, formed = false, raf = 0, running = false;
+      const mouse = { x:-999, y:-999 };
+      const t0 = performance.now();
+      let last = t0;
+
+      function sample(idx){
+        const w = WORDS[idx];
+        const lines = W < 640 ? w.narrow : w.wide;
+        const off = document.createElement('canvas');
+        off.width = W; off.height = H;
+        const o = off.getContext('2d', { willReadFrequently:true });
+        let size = W < 640 ? Math.min(W*0.16, 90) : Math.min(W*0.11, 120);
+        o.font = '700 ' + size + 'px ' + FAMILY;
+        let maxw = 0;
+        lines.forEach(l => { const m = o.measureText(l.map(x => x[0]).join('')).width; if(m > maxw) maxw = m; });
+        const avail = W * 0.88;
+        if(maxw > avail) size *= avail / maxw;
+        o.font = '700 ' + size + 'px ' + FAMILY;
+        o.textAlign = 'left'; o.textBaseline = 'alphabetic';
+        const lineH = size * 1.15, totalH = lineH * lines.length;
+        const top = H * 0.46 - totalH / 2;
+        lines.forEach((l, li) => {
+          const lw = o.measureText(l.map(x => x[0]).join('')).width;
+          let x = (W - lw) / 2;
+          const y = top + lineH * li + size * 0.95;
+          l.forEach(seg => {
+            o.fillStyle = seg[1] ? '#4CC9F0' : '#ffffff';
+            o.fillText(seg[0], x, y);
+            x += o.measureText(seg[0]).width;
+          });
+        });
+        const d = o.getImageData(0, 0, W, H).data;
+        const pts = [];
+        const step = W < 640 ? 1 : 2;
+        for(let y = 0; y < H; y += step){
+          for(let x = 0; x < W; x += step){
+            const i = (y * W + x) * 4;
+            if(d[i+3] > 128) pts.push([x, y, d[i] < 160 ? 1 : 0]);
+          }
+        }
+        for(let i = pts.length - 1; i > 0; i--){
+          const j = (Math.random() * (i + 1)) | 0;
+          const t = pts[i]; pts[i] = pts[j]; pts[j] = t;
+        }
+        return pts;
+      }
+
+      function assign(idx){
+        const pts = targets[idx];
+        if(!pts || !pts.length) return;
+        for(let i = 0; i < parts.length; i++){
+          const t = pts[i % pts.length];
+          const p = parts[i];
+          p.tx = t[0]; p.ty = t[1]; p.c = t[2];
+        }
+      }
+
+      function build(){
+        N = W < 640 ? 2600 : 5200;
+        targets = WORDS.map((_, i) => sample(i));
+        parts = [];
+        for(let i = 0; i < N; i++){
+          parts.push({
+            x: Math.random() * W, y: Math.random() * H,
+            tx: W/2, ty: H/2, vx: 0, vy: 0, c: 0,
+            r: 0.65 + Math.random() * 0.6,
+            a: 0.85 + Math.random() * 0.15,
+            ph: Math.random() * 6.28
+          });
+        }
+        strays = [];
+        for(let i = 0; i < 26; i++){
+          strays.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.15, vy:(Math.random()-.5)*.15, r:.6+Math.random()*.8, a:.3+Math.random()*.4 });
+        }
+        glows = [];
+        for(let k = 0; k < 24; k++){
+          glows.push({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.12, vy:(Math.random()-.5)*.12, r:2+Math.random()*3.5, a:.08+Math.random()*.16, ph:Math.random()*6.28 });
+        }
+        assign(cur);
+        if(reduce){ parts.forEach(p => { p.x = p.tx; p.y = p.ty; }); }
+      }
+
+      function resize(){
+        const r = canvas.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = Math.round(r.width); H = Math.round(r.height);
+        if(!W || !H) return;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        build();
+        if(reduce) draw();
+      }
+
+      function burst(){
+        formed = false;
+        parts.forEach(p => {
+          const a = Math.random() * 6.283, s = 7 + Math.random() * 16;
+          p.vx += Math.cos(a) * s; p.vy += Math.sin(a) * s;
+        });
+      }
+
+      function setWord(i){
+        cur = i;
+        assign(i);
+        formed = true;
+      }
+
+      function draw(){
+        ctx.clearRect(0, 0, W, H);
+        glows.forEach(g => {
+          const gr = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.r);
+          gr.addColorStop(0, 'rgba(76,201,240,' + g.a + ')');
+          gr.addColorStop(1, 'rgba(76,201,240,0)');
+          ctx.fillStyle = gr;
+          ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, 6.283); ctx.fill();
+        });
+        ctx.fillStyle = WHITE;
+        strays.forEach(s => {
+          ctx.globalAlpha = s.a;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.283); ctx.fill();
+        });
+        ctx.globalAlpha = 0.95;
+        for(let c = 0; c < 2; c++){
+          ctx.fillStyle = c ? CYAN : WHITE;
+          ctx.beginPath();
+          for(let i = 0; i < parts.length; i++){
+            const p = parts[i];
+            if(p.c !== c) continue;
+            ctx.moveTo(p.x + p.r, p.y);
+            ctx.arc(p.x, p.y, p.r, 0, 6.283);
+          }
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function frame(now){
+        if(!running) return;
+        const dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        const f = dt * 60;
+        const t = (now - t0) / 1000;
+
+        glows.forEach(g => {
+          g.x += g.vx * f; g.y += g.vy * f;
+          if(g.x < -10) g.x = W + 10; if(g.x > W + 10) g.x = -10;
+          if(g.y < -10) g.y = H + 10; if(g.y > H + 10) g.y = -10;
+        });
+        strays.forEach(s => {
+          s.x += s.vx * f; s.y += s.vy * f;
+          if(s.x < 0) s.x = W; if(s.x > W) s.x = 0;
+          if(s.y < 0) s.y = H; if(s.y > H) s.y = 0;
+        });
+
+        const R = Math.max(50, W * 0.09), R2 = R * R;
+        const damp = Math.pow(0.87, f);
+        for(let i = 0; i < parts.length; i++){
+          const p = parts[i];
+          if(formed){
+            const jx = Math.sin(t * 1.7 + p.ph) * 0.5;
+            const jy = Math.cos(t * 1.3 + p.ph * 1.7) * 0.5;
+            p.vx += (p.tx + jx - p.x) * 0.05 * f;
+            p.vy += (p.ty + jy - p.y) * 0.05 * f;
+          }
+          const dx = p.x - mouse.x, dy = p.y - mouse.y, d2 = dx*dx + dy*dy;
+          if(d2 < R2){
+            const d = Math.sqrt(d2) || 1, k = (1 - d / R) * 2.6 * f;
+            p.vx += (dx / d) * k; p.vy += (dy / d) * k;
+          }
+          p.vx *= damp; p.vy *= damp;
+          p.x += p.vx * f; p.y += p.vy * f;
+        }
+        draw();
+        raf = requestAnimationFrame(frame);
+      }
+
+      function start(){
+        if(reduce || running) return;
+        running = true; last = performance.now();
+        raf = requestAnimationFrame(frame);
+      }
+      function stop(){ running = false; cancelAnimationFrame(raf); }
+
+      host.addEventListener('pointermove', e => {
+        const r = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+      });
+      host.addEventListener('pointerleave', () => { mouse.x = mouse.y = -999; });
+      host.addEventListener('pointerdown', () => { if(!reduce) burst(); setTimeout(() => { if(running) formed = true; }, 250); });
+      window.addEventListener('resize', resize);
+
+      resize();
+      start();
+      // Re-sample the word shapes once Space Grotesk is ready (no position reset, just new targets)
+      if(document.fonts && document.fonts.load){
+        document.fonts.load('600 100px "Space Grotesk"').then(() => {
+          if(!W || !H) return;
+          targets = WORDS.map((_, i) => sample(i));
+          assign(cur);
+        }).catch(() => {});
+      }
+
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      return {
+        // Word 1 -> burst -> word 2 -> burst -> word 3, resolves once the last word has settled
+        async run(){
+          for(let i = 0; i < WORDS.length; i++){
+            setWord(i);
+            await sleep(i === WORDS.length - 1 ? 1500 : 1450);
+            if(i < WORDS.length - 1){ burst(); await sleep(260); }
+          }
+        },
+        showFinal(){ cur = WORDS.length - 1; assign(cur); parts.forEach(p => { p.x = p.tx; p.y = p.ty; }); draw(); },
+        burst, stop, setWord
+      };
+    }
+
+    const fx = createParticleText(document.getElementById('loaderParticles'), loader, reducedMotion);
 
     // Fill the background with enough hover-reactive tiles to cover any
     // reasonable viewport (flex-wrap handles the actual column count via
@@ -3212,15 +3420,17 @@
     ];
 
     function finish(){
+      if(!reducedMotion) fx.burst(); // particles scatter away as the loader fades
       loader.classList.add('hidden');
       document.body.style.overflow = '';
+      setTimeout(fx.stop, 700);
     }
 
     // Lock scroll while loading
     document.body.style.overflow = 'hidden';
 
     if(reducedMotion){
-      words[2].classList.add('active'); // just settle on the final line, no crossfade
+      fx.showFinal(); // just show the final line, no animation
       body.innerHTML = lines.map(l => `
         <div class="loader-line">
           <span class="prompt">&gt;</span><span class="txt">${l.text}</span>
@@ -3234,67 +3444,74 @@
 
     function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-    // ----- Crossfading "Welcome! / I'm Sameer Singh / My Portfolio Website" -----
-    function runWords(){
-      return new Promise(resolve => {
-        const fadeMs = 1100, holdMs = 750, gapMs = 150;
-        function showWord(i){
-          if(i >= words.length){ resolve(); return; }
-          const el = words[i];
-          el.classList.add('active');
-          setTimeout(() => {
-            el.classList.remove('active');
-            el.classList.add('exit');
-            setTimeout(() => {
-              el.classList.remove('exit');
-              showWord(i + 1);
-            }, fadeMs + gapMs);
-          }, fadeMs + holdMs);
+    // ----- One master clock: loading % drives the words, the terminal and the bar together -----
+    // LOAD_MS = total loading time. It is split equally between the 3 words, so each
+    // word (Welcome! / I'm Sameer Singh / My Portfolio Website) gets LOAD_MS / 3 on screen.
+    const LOAD_MS    = 9000;   // <- change this to make the whole loader faster / slower
+    const START_MS   = 250;    // small delay so fonts can settle
+    const BURST_LEAD = 320;    // particles scatter this long before the next word forms
+    const WORD_MS    = LOAD_MS / 3;
+
+    const totalChars = lines.reduce((sum, l) => sum + l.text.length, 0);
+    let typedChars = 0, lineIdx = 0, charIdx = 0, row = null, txtEl = null;
+
+    // Type the terminal up to `target` characters (target follows the loading %)
+    function typeTo(target){
+      while(typedChars < target && lineIdx < lines.length){
+        const line = lines[lineIdx];
+        if(!row){
+          row = document.createElement('div');
+          row.className = 'loader-line typing';
+          row.innerHTML = '<span class="prompt">&gt;</span><span class="txt"></span>';
+          body.appendChild(row);
+          txtEl = row.querySelector('.txt');
         }
-        showWord(0);
+        txtEl.textContent += line.text[charIdx++];
+        typedChars++;
+        if(charIdx >= line.text.length){
+          row.classList.remove('typing');
+          if(line.status){
+            const st = document.createElement('span');
+            st.className = 'status-ok';
+            st.textContent = `[${line.status}]`;
+            row.appendChild(st);
+          }
+          row = null; lineIdx++; charIdx = 0;
+        }
+      }
+    }
+
+    function runLoader(){
+      return new Promise(resolve => {
+        const t0 = performance.now();
+        let shown = -1, burstFor = -1;
+        function tick(now){
+          const e = now - t0;
+          const p = Math.min(1, e / LOAD_MS);
+
+          // words: equal share of the timeline each
+          const w = Math.min(2, Math.floor(e / WORD_MS));
+          if(w > shown){ shown = w; fx.setWord(w); }
+          // scatter just before the next word takes over
+          if(w < 2 && burstFor < w && e >= (w + 1) * WORD_MS - BURST_LEAD){ burstFor = w; fx.burst(); }
+
+          // percentage + bar
+          const pct = Math.floor(p * 100);
+          bar.style.width = pct + '%';
+          pctEl.textContent = String(pct).padStart(2,'0') + '%';
+
+          // terminal finishes a little before 100%
+          typeTo(Math.floor(Math.min(1, p / 0.94) * totalChars));
+
+          if(p >= 1){ typeTo(totalChars); resolve(); return; }
+          requestAnimationFrame(tick);
+        }
+        setTimeout(() => requestAnimationFrame(tick), START_MS);
       });
     }
 
-    // ----- Terminal boot typing sequence -----
-    const totalChars = lines.reduce((sum, l) => sum + l.text.length, 0);
-    let typedChars = 0;
-
-    async function typeLine(line){
-      const row = document.createElement('div');
-      row.className = 'loader-line typing';
-      row.innerHTML = '<span class="prompt">&gt;</span><span class="txt"></span>';
-      body.appendChild(row);
-      const txtEl = row.querySelector('.txt');
-
-      for(let i = 0; i < line.text.length; i++){
-        txtEl.textContent += line.text[i];
-        typedChars++;
-        const pct = Math.min(100, Math.round((typedChars / totalChars) * 100));
-        bar.style.width = pct + '%';
-        pctEl.textContent = String(pct).padStart(2,'0') + '%';
-        await sleep(14 + Math.random()*16);
-      }
-      row.classList.remove('typing');
-      if(line.status){
-        const statusSpan = document.createElement('span');
-        statusSpan.className = 'status-ok';
-        statusSpan.textContent = `[${line.status}]`;
-        row.appendChild(statusSpan);
-      }
-      await sleep(160);
-    }
-
-    async function runTerminal(){
-      await sleep(250); // let fonts settle
-      for(const line of lines){
-        await typeLine(line);
-      }
-      await sleep(300);
-    }
-
-    // Run both sequences in parallel; hide only once both are done.
-    Promise.all([runWords(), runTerminal()]).then(async () => {
-      await sleep(350);
+    runLoader().then(async () => {
+      await sleep(500); // let the last word + 100% breathe
       finish();
     });
   })();
